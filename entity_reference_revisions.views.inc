@@ -30,8 +30,8 @@ function entity_reference_revisions_field_views_data(FieldStorageConfigInterface
       'id' => 'standard',
       'base' => $target_base_table,
       'entity type' => $target_entity_type_id,
-      'base field' => $target_entity_type->getKey('id'),
-      'relationship field' => $field_storage->getName() . '_target_id',
+      'base field' => $target_entity_type->getKey('revision'),
+      'relationship field' => $field_storage->getName() . '_target_revision_id',
       'title' => t('@label referenced from @field_name', $args),
       'label' => t('@field_name: @label', $args),
     );
@@ -48,9 +48,9 @@ function entity_reference_revisions_field_views_data(FieldStorageConfigInterface
       'id' => 'entity_reverse',
       'field_name' => $field_storage->getName(),
       'field table' => $table_mapping->getDedicatedDataTableName($field_storage),
-      'field field' => $field_storage->getName() . '_target_id',
+      'field field' => $field_storage->getName() . '_target_revision_id',
       'base' => $target_entity_type->getBaseTable(),
-      'base field' => $target_entity_type->getKey('id'),
+      'base field' => $target_entity_type->getKey('revision'),
       'label' => t('@field_name', array('@field_name' => $field_storage->getName())),
     );
   }

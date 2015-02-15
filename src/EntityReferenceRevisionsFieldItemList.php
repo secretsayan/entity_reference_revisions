@@ -96,6 +96,7 @@ class EntityReferenceRevisionsFieldItemList extends EntityReferenceFieldItemList
       // Ensure we return consecutive deltas, in case we removed unknown UUIDs.
       $default_value = array_values($default_value);
     }
+
     return $default_value;
   }
 
