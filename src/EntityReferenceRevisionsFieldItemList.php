@@ -108,15 +108,21 @@ class EntityReferenceRevisionsFieldItemList extends EntityReferenceFieldItemList
     // Convert numeric IDs to UUIDs to ensure config deployability.
     $ids = array();
     foreach ($default_value as $delta => $properties) {
-      $ids[] = $properties['target_id'];
+      $ids[] = $properties['target_revision_id'];
     }
-    $entities = \Drupal::entityManager()
-      ->getStorage($this->getSetting('target_type'))
-      ->loadMultiple($ids);
+
+    $entities = array();
+    foreach($ids as $id) {
+      $entities[$id] = \Drupal::entityManager()
+        ->getStorage($this->getSetting('target_type'))
+        ->loadRevision($id);
+    }
 
     foreach ($default_value as $delta => $properties) {
-      unset($default_value[$delta]['target_id']);
-      $default_value[$delta]['target_uuid'] = $entities[$properties['target_id']]->uuid();
+      $default_value[$delta] = array(
+        'target_uuid' => $entities[$properties['target_revision_id']]->uuid(),
+        'target_revision_id' => $properties['target_revision_id'],
+      );
     }
     return $default_value;
   }
