@@ -36,3 +36,20 @@ entity_reference_revisions.default.handler_settings:
     auto_create:
       type: boolean
       label: 'Create referenced entities if they don''t already exist'
+
+field.storage_settings.entity_reference_revisions:
+  type: field.storage_settings.entity_reference
+
+field.field_settings.entity_reference_revisions:
+  type: field.field_settings.entity_reference
+
+field.widget.settings.entity_reference_revisions_autocomplete:
+  type: field.widget.settings.entity_reference_autocomplete
+
+field.formatter.settings.entity_reference_revisions_entity_view:
+  type: mapping
+  mapping:
+   view_mode:
+    type: string
+   link:
+    type: string
