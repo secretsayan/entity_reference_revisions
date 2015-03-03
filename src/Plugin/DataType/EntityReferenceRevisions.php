@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Contains \Drupal\entity_reference_revisions\Plugin\DataType\EntityReference.
+ * Contains \Drupal\entity_reference_revisions\Plugin\DataType\EntityReferenceRevisions.
  */
 
 namespace Drupal\entity_reference_revisions\Plugin\DataType;

@@ -7,14 +7,9 @@
 
 namespace Drupal\entity_reference_revisions\Plugin\Field\FieldWidget;
 
-use Drupal\Component\Utility\Tags;
-use Drupal\Core\Field\EntityReferenceFieldItemListInterface;
-use Drupal\Core\Field\FieldItemListInterface;
-use Drupal\Core\Field\WidgetBase;
-use Drupal\Core\Form\FormStateInterface;
-use Drupal\user\EntityOwnerInterface;
-use Symfony\Component\Validator\ConstraintViolationInterface;
+use Drupal\Core\Entity\Entity;
 use Drupal\Core\Field\Plugin\Field\FieldWidget\EntityReferenceAutocompleteWidget;
+use Drupal\Core\Form\FormStateInterface;
 
 /**
  * Plugin implementation of the 'entity_reference_autocomplete' widget.
@@ -29,5 +24,26 @@ use Drupal\Core\Field\Plugin\Field\FieldWidget\EntityReferenceAutocompleteWidget
  * )
  */
 class EntityReferenceRevisionsAutocompleteWidget extends EntityReferenceAutocompleteWidget {
+
+  /**
+   * {@inheritdoc}
+   */
+  public function massageFormValues(array $values, array $form, FormStateInterface $form_state) {
+    $entity_type = $this->fieldDefinition->getFieldStorageDefinition()->getTargetEntityTypeId();
+    foreach ($values as $key => $value) {
+      if($value['target_id']) {
+        $entity = \Drupal::entityManager()->getStorage($entity_type)->load($value['target_id']);
+        // Add the current revision ID.
+        $values[$key]['target_revision_id'] = $entity->getRevisionId();
+      }
+      // The entity_autocomplete form element returns an array when an entity
+      // was "autocreated", so we need to move it up a level.
+      if (is_array($value['target_id'])) {
+        unset($values[$key]['target_id']);
+        $values[$key] += $value['target_id'];
+      }
+    }
+    return $values;
+  }
 
 }
