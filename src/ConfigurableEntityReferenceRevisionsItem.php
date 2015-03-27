@@ -119,10 +119,19 @@ class ConfigurableEntityReferenceRevisionsItem extends EntityReferenceRevisionsI
    * {@inheritdoc}
    */
   public function storageSettingsForm(array &$form, FormStateInterface $form_state, $has_data) {
+
+    $entity_types = \Drupal::entityManager()->getDefinitions();
+    $options = array();
+    foreach ($entity_types as $entity_type) {
+      if ($entity_type->isRevisionable()) {
+        $options[$entity_type->id()] = $entity_type->getLabel();
+      }
+    }
+
     $element['target_type'] = array(
       '#type' => 'select',
       '#title' => t('Type of item to reference'),
-      '#options' => \Drupal::entityManager()->getEntityTypeLabels(TRUE),
+      '#options' => $options,
       '#default_value' => $this->getSetting('target_type'),
       '#required' => TRUE,
       '#disabled' => $has_data,

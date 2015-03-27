@@ -105,6 +105,17 @@ class EntityReferenceRevisionsAdminTest extends WebTestBase {
     $this->assertText($title);
     $this->assertText('Revision 1');
     $this->assertNoText('Revision 2');
+
+    // Make sure the non-revisionable entities are not selectable as referenced.
+    // entities.
+    $edit = array(
+      'new_storage_type' => 'entity_reference_revisions',
+      'label' => 'Entity reference revisions field',
+      'field_name' => 'entity_ref_revisions_field',
+    );
+    $this->drupalPostForm('admin/structure/types/manage/entity_revisions/fields/add-field', $edit, t('Save and continue'));
+    $this->assertNoOption('edit-field-storage-settings-target-type', 'user');
+    $this->assertOption('edit-field-storage-settings-target-type', 'node');
   }
 
 }
