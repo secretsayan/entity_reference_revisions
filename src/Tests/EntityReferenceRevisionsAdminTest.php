@@ -64,7 +64,7 @@ class EntityReferenceRevisionsAdminTest extends WebTestBase {
     ));
     $this->drupalLogin($admin_user);
     // Create entity reference revisions field.
-    static::fieldUIAddNewField('admin/structure/types/manage/entity_revisions', 'entity_reference_revisions', 'Entity reference revisions', 'entity_reference_revisions', array('field_storage[settings][target_type]' => 'node', 'field_storage[cardinality]' => '-1'), array('field[settings][handler_settings][target_bundles][article]' => TRUE));
+    static::fieldUIAddNewField('admin/structure/types/manage/entity_revisions', 'entity_reference_revisions', 'Entity reference revisions', 'entity_reference_revisions', array('settings[target_type]' => 'node', 'cardinality' => '-1'), array('settings[handler_settings][target_bundles][article]' => TRUE));
     $this->assertText('Saved Entity reference revisions configuration.');
 
     // Create an article.
@@ -114,8 +114,8 @@ class EntityReferenceRevisionsAdminTest extends WebTestBase {
       'field_name' => 'entity_ref_revisions_field',
     );
     $this->drupalPostForm('admin/structure/types/manage/entity_revisions/fields/add-field', $edit, t('Save and continue'));
-    $this->assertNoOption('edit-field-storage-settings-target-type', 'user');
-    $this->assertOption('edit-field-storage-settings-target-type', 'node');
+    $this->assertNoOption('edit-settings-target-type', 'user');
+    $this->assertOption('edit-settings-target-type', 'node');
   }
 
 }
