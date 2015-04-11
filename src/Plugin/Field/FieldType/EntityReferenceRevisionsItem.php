@@ -30,6 +30,7 @@ use Drupal\Core\Field\Plugin\Field\FieldType\EntityReferenceItem;
  *   id = "entity_reference_revisions",
  *   label = @Translation("Entity reference revisions"),
  *   description = @Translation("An entity field containing an entity reference."),
+ *   category = @Translation("Reference revisions"),
  *   no_ui = TRUE,
  *   list_class = "\Drupal\entity_reference_revisions\EntityReferenceRevisionsFieldItemList",
  *   constraints = {"ValidReference" = {}}

@@ -10,6 +10,7 @@ namespace Drupal\entity_reference_revisions;
 use Drupal\Component\Utility\String;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\Field\Plugin\Field\FieldType\EntityReferenceItem;
+use Drupal\Core\Field\PreconfiguredFieldUiOptionsInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Form\OptGroup;
 use Drupal\Core\Session\AccountInterface;
@@ -18,6 +19,7 @@ use Drupal\Core\TypedData\DataDefinition;
 use Drupal\Core\Validation\Plugin\Validation\Constraint\AllowedValuesConstraint;
 use Drupal\field\FieldStorageConfigInterface;
 use Drupal\entity_reference_revisions\Plugin\Field\FieldType\EntityReferenceRevisionsItem;
+use Drupal\Core\Entity\EntityTypeInterface;
 
 /**
  * Alternative plugin implementation of the 'entity_reference_revisions' field type.
@@ -30,7 +32,7 @@ use Drupal\entity_reference_revisions\Plugin\Field\FieldType\EntityReferenceRevi
  *
  * @see entity_reference_revisions_field_info_alter().
  */
-class ConfigurableEntityReferenceRevisionsItem extends EntityReferenceRevisionsItem implements OptionsProviderInterface {
+class ConfigurableEntityReferenceRevisionsItem extends EntityReferenceRevisionsItem implements OptionsProviderInterface, PreconfiguredFieldUiOptionsInterface {
 
   /**
    * {@inheritdoc}
@@ -224,5 +226,33 @@ class ConfigurableEntityReferenceRevisionsItem extends EntityReferenceRevisionsI
       $handler = \Drupal::service('plugin.manager.entity_reference_selection')->getSelectionHandler($form_state->get('field'));
       $handler->validateConfigurationForm($form, $form_state);
     }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getPreconfiguredOptions() {
+    $options = array();
+
+    // Add all the commonly referenced entity types as distinct pre-configured
+    // options.
+    $entity_types = \Drupal::entityManager()->getDefinitions();
+    $common_references = array_filter($entity_types, function (EntityTypeInterface $entity_type) {
+      return $entity_type->isCommonReferenceTarget() && $entity_type->isRevisionable();
+    });
+
+    /** @var \Drupal\Core\Entity\EntityTypeInterface $entity_type */
+    foreach ($common_references as $entity_type) {
+      $options[$entity_type->id()] = [
+        'label' => $entity_type->getLabel(),
+        'field_storage_config' => [
+          'settings' => [
+            'target_type' => $entity_type->id(),
+          ]
+        ]
+      ];
+    }
+
+    return $options;
   }
 }

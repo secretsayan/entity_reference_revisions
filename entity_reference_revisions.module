@@ -222,3 +222,12 @@ function entity_reference_revisions_create_field($entity_type, $bundle, $field_n
   }
 }
 
+/**
+ * Implements hook_form_FORM_ID_alter() for 'field_ui_field_storage_add_form'.
+ */
+function entity_reference_revisions_form_field_ui_field_storage_add_form_alter(array &$form) {
+  // Move the "Entity reference revisions" option to the end of the list and rename it to
+  // "Other".
+  unset($form['add']['new_storage_type']['#options'][t('Reference revisions')]['entity_reference_revisions']);
+  $form['add']['new_storage_type']['#options'][t('Reference revisions')]['entity_reference_revisions'] = t('Other…');
+}
