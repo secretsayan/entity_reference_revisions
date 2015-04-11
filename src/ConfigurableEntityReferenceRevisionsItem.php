@@ -238,11 +238,12 @@ class ConfigurableEntityReferenceRevisionsItem extends EntityReferenceRevisionsI
     // options.
     $entity_types = \Drupal::entityManager()->getDefinitions();
     $common_references = array_filter($entity_types, function (EntityTypeInterface $entity_type) {
-      return $entity_type->isCommonReferenceTarget() && $entity_type->isRevisionable();
+      return $entity_type->get('common_reference_revisions_target') && $entity_type->isRevisionable();
     });
 
     /** @var \Drupal\Core\Entity\EntityTypeInterface $entity_type */
     foreach ($common_references as $entity_type) {
+
       $options[$entity_type->id()] = [
         'label' => $entity_type->getLabel(),
         'field_storage_config' => [
@@ -251,6 +252,10 @@ class ConfigurableEntityReferenceRevisionsItem extends EntityReferenceRevisionsI
           ]
         ]
       ];
+      $default_reference_settings = $entity_type->get('default_reference_revision_settings');
+      if (is_array($default_reference_settings)) {
+        $options[$entity_type->id()] = array_merge($options[$entity_type->id()], $default_reference_settings);
+      }
     }
 
     return $options;
