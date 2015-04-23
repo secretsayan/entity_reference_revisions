@@ -7,7 +7,7 @@
 
 namespace Drupal\entity_reference_revisions;
 
-use Drupal\Component\Utility\String;
+use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\Field\Plugin\Field\FieldType\EntityReferenceItem;
 use Drupal\Core\Field\PreconfiguredFieldUiOptionsInterface;
@@ -93,7 +93,7 @@ class ConfigurableEntityReferenceRevisionsItem extends EntityReferenceRevisionsI
 
     $return = array();
     foreach ($options as $bundle => $entity_ids) {
-      $bundle_label = String::checkPlain($bundles[$bundle]['label']);
+      $bundle_label = SafeMarkup::checkPlain($bundles[$bundle]['label']);
       $return[$bundle_label] = $entity_ids;
     }
 
@@ -157,11 +157,11 @@ class ConfigurableEntityReferenceRevisionsItem extends EntityReferenceRevisionsI
       // entity type specific plugins (e.g. 'default:node', 'default:user',
       // ...).
       if (array_key_exists($selection_group_id, $selection_plugins[$selection_group_id])) {
-        $handlers_options[$selection_group_id] = String::checkPlain($selection_plugins[$selection_group_id][$selection_group_id]['label']);
+        $handlers_options[$selection_group_id] = SafeMarkup::checkPlain($selection_plugins[$selection_group_id][$selection_group_id]['label']);
       }
       elseif (array_key_exists($selection_group_id . ':' . $this->getSetting('target_type'), $selection_plugins[$selection_group_id])) {
         $selection_group_plugin = $selection_group_id . ':' . $this->getSetting('target_type');
-        $handlers_options[$selection_group_plugin] = String::checkPlain($selection_plugins[$selection_group_id][$selection_group_plugin]['base_plugin_label']);
+        $handlers_options[$selection_group_plugin] = SafeMarkup::checkPlain($selection_plugins[$selection_group_id][$selection_group_plugin]['base_plugin_label']);
       }
     }
 

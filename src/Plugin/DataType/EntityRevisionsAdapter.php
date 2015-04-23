@@ -7,7 +7,6 @@
 
 namespace Drupal\entity_reference_revisions\Plugin\DataType;
 
-use Drupal\Component\Utility\String;
 use Drupal\Core\Entity\FieldableEntityInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\TypedData\EntityDataDefinition;
