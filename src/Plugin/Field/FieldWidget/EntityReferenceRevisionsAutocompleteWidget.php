@@ -29,7 +29,7 @@ class EntityReferenceRevisionsAutocompleteWidget extends EntityReferenceAutocomp
    * {@inheritdoc}
    */
   public function massageFormValues(array $values, array $form, FormStateInterface $form_state) {
-    $entity_type = $this->fieldDefinition->getFieldStorageDefinition()->getTargetEntityTypeId();
+    $entity_type = $this->fieldDefinition->getFieldStorageDefinition()->getSetting('target_type');
     foreach ($values as $key => $value) {
       if($value['target_id']) {
         $entity = \Drupal::entityManager()->getStorage($entity_type)->load($value['target_id']);
