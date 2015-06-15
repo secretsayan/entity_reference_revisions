@@ -15,6 +15,8 @@ use Drupal\simpletest\WebTestBase;
 
 /**
  * Tests the entity_reference_revisions autocomplete.
+ *
+ * @group entity_reference_revisions
  */
 class EntityReferenceRevisionsAutocompleteTest extends WebTestBase {
 
