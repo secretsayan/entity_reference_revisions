@@ -11,11 +11,13 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Entity\TypedData\EntityDataDefinition;
 use Drupal\Core\Field\FieldDefinitionInterface;
-use Drupal\Core\Field\FieldItemBase;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
+use Drupal\Core\Field\PreconfiguredFieldUiOptionsInterface;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\TypedData\DataDefinition;
 use Drupal\Core\TypedData\DataReferenceDefinition;
-use Drupal\Core\Field\Plugin\Field\FieldType\EntityReferenceItem;
+use Drupal\Core\TypedData\OptionsProviderInterface;
+use Drupal\entity_reference\ConfigurableEntityReferenceItem;
 
 /**
  * Defines the 'entity_reference_revisions' entity field type.
@@ -32,38 +34,72 @@ use Drupal\Core\Field\Plugin\Field\FieldType\EntityReferenceItem;
  *   description = @Translation("An entity field containing an entity reference."),
  *   category = @Translation("Reference revisions"),
  *   no_ui = TRUE,
+ *   class = "\Drupal\entity_reference_revisions\Plugin\Field\FieldType\EntityReferenceRevisionsItem",
  *   list_class = "\Drupal\entity_reference_revisions\EntityReferenceRevisionsFieldItemList",
+ *   default_formatter = "entity_reference_revisions_entity_view",
+ *   default_widget = "entity_reference_revisions_autocomplete",
  *   constraints = {"ValidReference" = {}}
  * )
  */
-class EntityReferenceRevisionsItem extends FieldItemBase {
-
-
-  /**
-   * Marker value to identify a newly created entity.
-   *
-   * @var int
-   */
-  protected static $NEW_ENTITY_MARKER = -1;
+class EntityReferenceRevisionsItem extends ConfigurableEntityReferenceItem implements OptionsProviderInterface, PreconfiguredFieldUiOptionsInterface {
 
   /**
    * {@inheritdoc}
    */
-  public static function defaultStorageSettings() {
-    return array(
-      'target_type' => \Drupal::moduleHandler()->moduleExists('node') ? 'node' : 'user',
-      'target_bundle' => NULL,
-    ) + parent::defaultStorageSettings();
+  public function storageSettingsForm(array &$form, FormStateInterface $form_state, $has_data) {
+
+    $entity_types = \Drupal::entityManager()->getDefinitions();
+    $options = array();
+    foreach ($entity_types as $entity_type) {
+      if ($entity_type->isRevisionable()) {
+        $options[$entity_type->id()] = $entity_type->getLabel();
+      }
+    }
+
+    $element['target_type'] = array(
+      '#type' => 'select',
+      '#title' => t('Type of item to reference'),
+      '#options' => $options,
+      '#default_value' => $this->getSetting('target_type'),
+      '#required' => TRUE,
+      '#disabled' => $has_data,
+      '#size' => 1,
+    );
+
+    return $element;
   }
 
   /**
    * {@inheritdoc}
    */
-  public static function defaultFieldSettings() {
-    return array(
-      'handler' => 'default:' . (\Drupal::moduleHandler()->moduleExists('node') ? 'node' : 'user'),
-      'handler_settings' => array(),
-    ) + parent::defaultFieldSettings();
+  public static function getPreconfiguredOptions() {
+    $options = array();
+
+    // Add all the commonly referenced entity types as distinct pre-configured
+    // options.
+    $entity_types = \Drupal::entityManager()->getDefinitions();
+    $common_references = array_filter($entity_types, function (EntityTypeInterface $entity_type) {
+      return $entity_type->get('common_reference_revisions_target') && $entity_type->isRevisionable();
+    });
+
+    /** @var \Drupal\Core\Entity\EntityTypeInterface $entity_type */
+    foreach ($common_references as $entity_type) {
+
+      $options[$entity_type->id()] = [
+        'label' => $entity_type->getLabel(),
+        'field_storage_config' => [
+          'settings' => [
+            'target_type' => $entity_type->id(),
+          ]
+        ]
+      ];
+      $default_reference_settings = $entity_type->get('default_reference_revision_settings');
+      if (is_array($default_reference_settings)) {
+        $options[$entity_type->id()] = array_merge($options[$entity_type->id()], $default_reference_settings);
+      }
+    }
+
+    return $options;
   }
 
   /**
@@ -72,20 +108,7 @@ class EntityReferenceRevisionsItem extends FieldItemBase {
   public static function propertyDefinitions(FieldStorageDefinitionInterface $field_definition) {
     $settings = $field_definition->getSettings();
     $target_type_info = \Drupal::entityManager()->getDefinition($settings['target_type']);
-
-    if ($target_type_info->isSubclassOf('\Drupal\Core\Entity\FieldableEntityInterface')) {
-      // @todo: Lookup the entity type's ID data type and use it here.
-      // https://drupal.org/node/2107249
-      $target_id_definition = DataDefinition::create('integer')
-        ->setLabel(t('@label ID', array($target_type_info->getLabel())))
-        ->setSetting('unsigned', TRUE);
-    }
-    else {
-      $target_id_definition = DataDefinition::create('string')
-        ->setLabel(t('@label ID', array($target_type_info->getLabel())));
-    }
-    $target_id_definition->setRequired(TRUE);
-    $properties['target_id'] = $target_id_definition;
+    $properties = parent::propertyDefinitions($field_definition);
 
     if ($target_type_info->getKey('revision')) {
       $target_revision_id_definition = DataDefinition::create('integer')
@@ -104,18 +127,7 @@ class EntityReferenceRevisionsItem extends FieldItemBase {
       ->setReadOnly(FALSE)
       ->setTargetDefinition(EntityDataDefinition::create($settings['target_type']));
 
-    if (isset($settings['target_bundle'])) {
-      $properties['entity']->getTargetDefinition()->addConstraint('Bundle', $settings['target_bundle']);
-    }
-
     return $properties;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function mainPropertyName() {
-    return 'target_id';
   }
 
   /**
@@ -125,33 +137,7 @@ class EntityReferenceRevisionsItem extends FieldItemBase {
     $target_type = $field_definition->getSetting('target_type');
     $target_type_info = \Drupal::entityManager()->getDefinition($target_type);
 
-    if ($target_type_info->isSubclassOf('\Drupal\Core\Entity\FieldableEntityInterface')) {
-      $columns = array(
-        'target_id' => array(
-          'description' => 'The ID of the target entity.',
-          'type' => 'int',
-          'unsigned' => TRUE,
-        ),
-      );
-    }
-    else {
-      $columns = array(
-        'target_id' => array(
-          'description' => 'The ID of the target entity.',
-          'type' => 'varchar',
-          // If the target entities act as bundles for another entity type,
-          // their IDs should not exceed the maximum length for bundles.
-          'length' => $target_type_info->getBundleOf() ? EntityTypeInterface::BUNDLE_MAX_LENGTH : 255,
-        ),
-      );
-    }
-
-    $schema = array(
-      'columns' => $columns,
-      'indexes' => array(
-        'target_id' => array('target_id'),
-      ),
-    );
+    $schema = parent::schema($field_definition);
 
     if ($target_type_info->getKey('revision')) {
       $schema['columns']['target_revision_id'] = array(
@@ -198,25 +184,11 @@ class EntityReferenceRevisionsItem extends FieldItemBase {
         }
       }
       // Notify the parent if necessary.
-      if ($notify && $this->parent) {
-        $this->parent->onChange($this->getName());
+      if ($notify && $this->getParent()) {
+        $this->getParent()->onChange($this->getName());
       }
     }
 
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getValue() {
-    $values = parent::getValue();
-
-    // If there is an unsaved entity, return it as part of the field item values
-    // to ensure idempotency of getValue() / setValue().
-    if ($this->hasNewEntity()) {
-      $values['entity'] = $this->entity;
-    }
-    return $values;
   }
 
   /**
@@ -241,7 +213,9 @@ class EntityReferenceRevisionsItem extends FieldItemBase {
         'target_revision_id' => $this->target_revision_id,
       ));
     }
-    parent::onChange($property_name, $notify);
+    if ($notify && isset($this->parent)) {
+      $this->parent->onChange($this->name);
+    }
   }
 
   /**
@@ -265,42 +239,8 @@ class EntityReferenceRevisionsItem extends FieldItemBase {
    * {@inheritdoc}
    */
   public function preSave() {
-    if ($this->hasNewEntity()) {
-      // Save the entity if it has not already been saved by some other code.
-      if ($this->entity->isNew()) {
-        $this->entity->save();
-      }
-      // Make sure the parent knows we are updating this property so it can
-      // react properly.
-      $this->target_id = $this->entity->id();
-      $this->target_revision_id = $this->entity->getRevisionId();
-    }
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function generateSampleValue(FieldDefinitionInterface $field_definition) {
-    $manager = \Drupal::service('plugin.manager.entity_reference_selection');
-    if ($referenceable = $manager->getSelectionHandler($field_definition)->getReferenceableEntities()) {
-      $group = array_rand($referenceable);
-      $values['target_id'] = array_rand($referenceable[$group]);
-      return $values;
-    }
-  }
-
-  /**
-   * Determines whether the item holds an unsaved entity.
-   *
-   * This is notably used for "autocreate" widgets, and more generally to
-   * support referencing freshly created entities (they will get saved
-   * automatically as the hosting entity gets saved).
-   *
-   * @return bool
-   *   TRUE if the item holds an unsaved entity.
-   */
-  public function hasNewEntity() {
-    return $this->target_id === static::$NEW_ENTITY_MARKER;
+    parent::preSave();
+    $this->target_revision_id = $this->entity->getRevisionId();
   }
 
   /**
@@ -323,4 +263,12 @@ class EntityReferenceRevisionsItem extends FieldItemBase {
     }
     return $dependencies;
   }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function onDependencyRemoval(FieldDefinitionInterface $field_definition, array $dependencies) {
+    return FALSE;
+  }
+
 }

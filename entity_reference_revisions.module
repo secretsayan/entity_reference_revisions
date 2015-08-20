@@ -39,19 +39,6 @@ function entity_reference_revisions_help($route_name, RouteMatchInterface $route
 }
 
 /**
- * Implements hook_field_info_alter().
- */
-function entity_reference_revisions_field_info_alter(&$info) {
-  // Make the entity reference field configurable.
-  $info['entity_reference_revisions']['no_ui'] = FALSE;
-  $info['entity_reference_revisions']['class'] = '\Drupal\entity_reference_revisions\ConfigurableEntityReferenceRevisionsItem';
-  $info['entity_reference_revisions']['list_class'] = '\Drupal\entity_reference_revisions\EntityReferenceRevisionsFieldItemList';
-  $info['entity_reference_revisions']['default_formatter'] = 'entity_reference_revisions_entity_view';
-  $info['entity_reference_revisions']['default_widget'] = 'entity_reference_revisions_autocomplete';
-  $info['entity_reference_revisions']['provider'] = 'entity_reference_revisions';
-}
-
-/**
  * Implements hook_field_widget_info_alter().
  */
 function entity_reference_revisions_field_widget_info_alter(&$info) {
@@ -94,7 +81,7 @@ function entity_reference_revisions_field_storage_config_update(FieldStorageConf
   foreach ($field_storage->bundles() as $entity_type => $bundles) {
     foreach ($bundles as $bundle) {
       $field = FieldConfig::loadByName($entity_type, $bundle, $field_name);
-      $field->settings['handler_settings'] = array();
+      $field->setSetting('handler_settings', array());
       $field->save();
     }
   }

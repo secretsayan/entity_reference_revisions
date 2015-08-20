@@ -118,7 +118,7 @@ class EntityReferenceRevisions extends EntityReference {
       throw new \InvalidArgumentException('Value is not a valid entity.');
     }
     else {
-      $this->id = $value['target_id'];;
+      $this->id = $value['target_id'];
       $this->revision_id = $value['target_revision_id'];
     }
     // Notify the parent of any changes.
