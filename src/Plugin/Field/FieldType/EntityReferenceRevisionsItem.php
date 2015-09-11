@@ -248,9 +248,9 @@ class EntityReferenceRevisionsItem extends ConfigurableEntityReferenceItem imple
    */
   public static function calculateDependencies(FieldDefinitionInterface $field_definition) {
     $dependencies = [];
-    if (is_array($field_definition->default_value) && count($field_definition->default_value)) {
+    if (is_array($field_definition->getDefaultValueLiteral()) && count($field_definition->getDefaultValueLiteral())) {
       $target_entity_type = \Drupal::entityManager()->getDefinition($field_definition->getFieldStorageDefinition()->getSetting('target_type'));
-      foreach ($field_definition->default_value as $default_value) {
+      foreach ($field_definition->getDefaultValueLiteral() as $default_value) {
         if (is_array($default_value) && isset($default_value['target_uuid'])) {
           $entity = \Drupal::entityManager()->loadEntityByUuid($target_entity_type->id(), $default_value['target_uuid']);
           // If the entity does not exist do not create the dependency.
