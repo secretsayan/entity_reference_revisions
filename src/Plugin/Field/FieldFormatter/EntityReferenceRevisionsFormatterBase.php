@@ -7,47 +7,12 @@
 
 namespace Drupal\entity_reference_revisions\Plugin\Field\FieldFormatter;
 
-use Drupal\Core\Field\FieldItemListInterface;
-use Drupal\Core\Field\FormatterBase;
-use Drupal\Core\TypedData\TranslatableInterface;
+use Drupal\Core\Field\Plugin\Field\FieldFormatter\EntityReferenceFormatterBase;
 
 /**
  * Parent plugin for entity reference formatters.
  */
-abstract class EntityReferenceRevisionsFormatterBase extends FormatterBase {
-
-  /**
-   * Returns the accessible and translated entities for view.
-   *
-   * @param \Drupal\Core\Field\FieldItemListInterface $items
-   *   The item list.
-   *
-   * @return \Drupal\Core\Entity\EntityInterface[]
-   *   The entities to view.
-   */
-  protected function getEntitiesToView(FieldItemListInterface $items) {
-    $entities = array();
-
-    $parent_entity_langcode = $items->getEntity()->language()->getId();
-    foreach ($items as $delta => $item) {
-      // Ignore items where no entity could be loaded in prepareView().
-      if (!empty($item->_loaded)) {
-        $entity = $item->entity;
-
-        // Set the entity in the correct language for display.
-        if ($entity instanceof TranslatableInterface && $entity->hasTranslation($parent_entity_langcode)) {
-          $entity = $entity->getTranslation($parent_entity_langcode);
-        }
-
-        // Check entity access.
-        if ($entity->access('view')) {
-          $entities[$delta] = $entity;
-        }
-      }
-    }
-
-    return $entities;
-  }
+abstract class EntityReferenceRevisionsFormatterBase extends EntityReferenceFormatterBase {
 
   /**
    * {@inheritdoc}
