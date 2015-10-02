@@ -164,22 +164,26 @@ class EntityReferenceRevisionsItem extends ConfigurableEntityReferenceItem imple
       parent::setValue($values, FALSE);
       // Support setting the field item with only one property, but make sure
       // values stay in sync if only property is passed.
-      if (isset($values['target_id']) && !isset($values['entity'])) {
+      // NULL is a valid value, so we use array_key_exists().
+      if (is_array($values) && array_key_exists('target_id', $values) && !isset($values['entity'])) {
         $this->onChange('target_id', FALSE);
       }
-      elseif (isset($values['target_revision_id']) && !isset($values['entity'])) {
+      elseif (is_array($values) && !array_key_exists('target_revision_id', $values) && isset($values['entity'])) {
         $this->onChange('target_revision_id', FALSE);
       }
-      elseif (!isset($values['target_id']) && isset($values['entity'])) {
+      elseif (is_array($values) && !array_key_exists('target_id', $values) && isset($values['entity'])) {
         $this->onChange('entity', FALSE);
       }
-      elseif (isset($values['target_id']) && isset($values['entity'])) {
+      elseif (is_array($values) && array_key_exists('target_id', $values) && isset($values['entity'])) {
         // If both properties are passed, verify the passed values match. The
         // only exception we allow is when we have a new entity: in this case
         // its actual id and target_id will be different, due to the new entity
         // marker.
         $entity_id = $this->get('entity')->getTargetIdentifier();
-        if ($entity_id != $values['target_id'] && ($values['target_id'] != static::$NEW_ENTITY_MARKER || !$this->entity->isNew())) {
+        // If the entity has been saved and we're trying to set both the
+        // target_id and the entity values with a non-null target ID, then the
+        // value for target_id should match the ID of the entity value.
+        if (!$this->entity->isNew() && $values['target_id'] !== NULL && ($entity_id !== $values['target_id'])) {
           throw new \InvalidArgumentException('The target id and entity passed to the entity reference item do not match.');
         }
       }
@@ -198,10 +202,10 @@ class EntityReferenceRevisionsItem extends ConfigurableEntityReferenceItem imple
     // Make sure that the target ID and the target property stay in sync.
     if ($property_name == 'entity') {
       $property = $this->get('entity');
-      $target_id = $property->isTargetNew() ? static::$NEW_ENTITY_MARKER : $property->getTargetIdentifier();
+      $target_id = $property->isTargetNew() ? NULL : $property->getTargetIdentifier();
       $this->writePropertyValue('target_id', $target_id);
     }
-    elseif ($property_name == 'target_id' && $this->target_id != static::$NEW_ENTITY_MARKER) {
+    elseif ($property_name == 'target_id' && $this->target_id != NULL) {
       $this->writePropertyValue('entity', array(
         'target_id' => $this->target_id,
         'target_revision_id' => $this->target_revision_id,
