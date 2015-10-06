@@ -33,7 +33,7 @@ use Drupal\entity_reference\ConfigurableEntityReferenceItem;
  *   label = @Translation("Entity reference revisions"),
  *   description = @Translation("An entity field containing an entity reference."),
  *   category = @Translation("Reference revisions"),
- *   no_ui = TRUE,
+ *   no_ui = FALSE,
  *   class = "\Drupal\entity_reference_revisions\Plugin\Field\FieldType\EntityReferenceRevisionsItem",
  *   list_class = "\Drupal\entity_reference_revisions\EntityReferenceRevisionsFieldItemList",
  *   default_formatter = "entity_reference_revisions_entity_view",
