@@ -12,12 +12,12 @@ use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Entity\TypedData\EntityDataDefinition;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
+use Drupal\Core\Field\Plugin\Field\FieldType\EntityReferenceItem;
 use Drupal\Core\Field\PreconfiguredFieldUiOptionsInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\TypedData\DataDefinition;
 use Drupal\Core\TypedData\DataReferenceDefinition;
 use Drupal\Core\TypedData\OptionsProviderInterface;
-use Drupal\entity_reference\ConfigurableEntityReferenceItem;
 
 /**
  * Defines the 'entity_reference_revisions' entity field type.
@@ -41,7 +41,7 @@ use Drupal\entity_reference\ConfigurableEntityReferenceItem;
  *   constraints = {"ValidReference" = {}}
  * )
  */
-class EntityReferenceRevisionsItem extends ConfigurableEntityReferenceItem implements OptionsProviderInterface, PreconfiguredFieldUiOptionsInterface {
+class EntityReferenceRevisionsItem extends EntityReferenceItem implements OptionsProviderInterface, PreconfiguredFieldUiOptionsInterface {
 
   /**
    * {@inheritdoc}
