@@ -95,7 +95,7 @@ class EntityReferenceRevisionsAutocompleteTest extends WebTestBase {
     $edit = array(
       'title[0][value]' => $title,
       'body[0][value]' => 'Revision 1',
-      'field_entity_reference_revisions[0][target_id]' => $block_label . '(' . $block->id() . ')',
+      'field_entity_reference_revisions[0][target_id]' => $block_label . ' (' . $block->id() . ')',
       'revision' => TRUE,
     );
     $this->drupalPostForm('node/add/article', $edit, t('Save and publish'));
