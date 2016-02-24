@@ -8,7 +8,6 @@
 namespace Drupal\entity_reference_revisions\Plugin\DataType;
 
 use Drupal\Core\Entity\EntityInterface;
-use Drupal\Core\TypedData\DataReferenceBase;
 use Drupal\Core\Entity\Plugin\DataType\EntityReference;
 
 /**
