@@ -84,6 +84,10 @@ class EntityReferenceRevisionsCompositeTest extends WebTestBase {
     $this->assertEqual($composite_after['parent_type'][0]['value'], $node->getEntityTypeId());
     $this->assertEqual($composite_after['parent_id'][0]['value'], $node->id());
     $this->assertEqual($composite_after['parent_field_name'][0]['value'], 'composite_reference');
+
+    // Test that the composite entity is deleted when its parent is deleted.
+    $node->delete();
+    $this->assertNull(EntityTestCompositeRelationship::load($composite->id()));
   }
 
 }

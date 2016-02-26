@@ -317,6 +317,15 @@ class EntityReferenceRevisionsItem extends EntityReferenceItem implements Option
   /**
    * {@inheritdoc}
    */
+  public function delete() {
+    parent::delete();
+    if ($this->entity && $this->entity->getEntityType()->get('entity_revision_parent_type_field') && $this->entity->getEntityType()->get('entity_revision_parent_id_field')) {
+      $this->entity->delete();
+    }
+}
+ /**
+ * {@inheritdoc}
+ */
   public static function onDependencyRemoval(FieldDefinitionInterface $field_definition, array $dependencies) {
     return FALSE;
   }

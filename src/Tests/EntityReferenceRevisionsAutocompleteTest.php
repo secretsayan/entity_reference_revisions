@@ -9,8 +9,10 @@
 
 namespace Drupal\entity_reference_revisions\Tests;
 
+use Drupal\block_content\Entity\BlockContent;
 use Drupal\Component\Utility\SafeMarkup;
 use Drupal\field_ui\Tests\FieldUiTestTrait;
+use Drupal\node\Entity\Node;
 use Drupal\simpletest\WebTestBase;
 
 /**
@@ -101,6 +103,13 @@ class EntityReferenceRevisionsAutocompleteTest extends WebTestBase {
     $this->drupalPostForm('node/add/article', $edit, t('Save and publish'));
     $this->assertText($title);
     $this->assertText(SafeMarkup::checkPlain($block_content));
+
+    // Check if the block content is not deleted since there is no composite
+    // relationship.
+    $node = $this->drupalGetNodeByTitle($edit['title[0][value]']);
+    $node = Node::load($node->id());
+    $node->delete();
+    $this->assertNotNull(BlockContent::load($block->id()));
   }
 
   /**
