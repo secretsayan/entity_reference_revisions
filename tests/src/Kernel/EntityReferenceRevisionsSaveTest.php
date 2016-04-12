@@ -51,7 +51,7 @@ class EntityReferenceRevisionsSaveTest extends KernelTestBase {
    *
    * Tests that the referenced entity is saved when needsSave() is TRUE.
    */
-  public function testEntityReferenceRevisionsCompositeRelationship() {
+  public function testNeedsSave() {
 
     // Add the entity_reference_revisions field to article.
     $field_storage = FieldStorageConfig::create(array(
@@ -118,4 +118,62 @@ class EntityReferenceRevisionsSaveTest extends KernelTestBase {
     static::assertEquals($entity_test_after->name->value, $text);
   }
 
+  /**
+   * Test for NeedsSaveInterface implementation.
+   *
+   * Tests that the fields in the parent are properly updated.
+   */
+  public function testSaveNewEntity() {
+    // Add the entity_reference_revisions field to article.
+    $field_storage = FieldStorageConfig::create(array(
+      'field_name' => 'composite_reference',
+      'entity_type' => 'node',
+      'type' => 'entity_reference_revisions',
+      'settings' => array(
+        'target_type' => 'entity_test_composite'
+      ),
+    ));
+    $field_storage->save();
+    $field = FieldConfig::create(array(
+      'field_storage' => $field_storage,
+      'bundle' => 'article',
+    ));
+    $field->save();
+
+    $text = 'Dummy text';
+    // Create the test entity.
+    $entity_test = EntityTestCompositeRelationship::create(array(
+      'uuid' => $text,
+      'name' => $text,
+    ));
+
+    // Create a node with a reference to the test entity and save.
+    $node = Node::create([
+      'title' => $this->randomMachineName(),
+      'type' => 'article',
+      'composite_reference' => $entity_test,
+    ]);
+    $node->save();
+
+    // Test that the fields on node are properly set.
+    $node_after = Node::load($node->id());
+    static::assertEquals($node_after->composite_reference[0]->target_id, $entity_test->id());
+    static::assertEquals($node_after->composite_reference[0]->target_revision_id, $entity_test->getRevisionId());
+    // Check that the entity is not new after save parent.
+    $this->assertFalse($entity_test->isNew());
+
+    // Create a new test entity.
+    $text = 'Smart text';
+    $second_entity_test = EntityTestCompositeRelationship::create(array(
+      'uuid' => $text,
+      'name' => $text,
+    ));
+    $second_entity_test->save();
+
+    // Set the new test entity to the node field.
+    $node_after->composite_reference = $second_entity_test;
+    // Check the fields have been updated.
+    static::assertEquals($node_after->composite_reference[0]->target_id, $second_entity_test->id());
+    static::assertEquals($node_after->composite_reference[0]->target_revision_id, $second_entity_test->getRevisionId());
+  }
 }

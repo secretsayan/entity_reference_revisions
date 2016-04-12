@@ -168,10 +168,10 @@ class EntityReferenceRevisionsItem extends EntityReferenceItem implements Option
       if (is_array($values) && array_key_exists('target_id', $values) && !isset($values['entity'])) {
         $this->onChange('target_id', FALSE);
       }
-      elseif (is_array($values) && !array_key_exists('target_revision_id', $values) && isset($values['entity'])) {
+      elseif (is_array($values) && array_key_exists('target_revision_id', $values) && !isset($values['entity'])) {
         $this->onChange('target_revision_id', FALSE);
       }
-      elseif (is_array($values) && !array_key_exists('target_id', $values) && isset($values['entity'])) {
+      elseif (is_array($values) && !array_key_exists('target_id', $values) && !array_key_exists('target_revision_id', $values) && isset($values['entity'])) {
         $this->onChange('entity', FALSE);
       }
       elseif (is_array($values) && array_key_exists('target_id', $values) && isset($values['entity'])) {
@@ -215,14 +215,15 @@ class EntityReferenceRevisionsItem extends EntityReferenceItem implements Option
       $property = $this->get('entity');
       $target_id = $property->isTargetNew() ? NULL : $property->getTargetIdentifier();
       $this->writePropertyValue('target_id', $target_id);
+      $this->writePropertyValue('target_revision_id', $property->getValue()->getRevisionId());
     }
-    elseif ($property_name == 'target_id' && $this->target_id != NULL) {
+    elseif ($property_name == 'target_id' && $this->target_id != NULL && $this->target_revision_id) {
       $this->writePropertyValue('entity', array(
         'target_id' => $this->target_id,
         'target_revision_id' => $this->target_revision_id,
       ));
     }
-    elseif ($property_name == 'target_revision_id' && $this->target_revision_id) {
+    elseif ($property_name == 'target_revision_id' && $this->target_revision_id && $this->target_id) {
       $this->writePropertyValue('entity', array(
         'target_id' => $this->target_id,
         'target_revision_id' => $this->target_revision_id,
