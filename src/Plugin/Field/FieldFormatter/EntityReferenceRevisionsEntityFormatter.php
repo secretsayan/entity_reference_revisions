@@ -129,20 +129,13 @@ class EntityReferenceRevisionsEntityFormatter extends EntityReferenceRevisionsFo
         $this->loggerFactory->get('entity')->error('Recursive rendering detected when rendering entity @entity_type @entity_id. Aborting rendering.', array('@entity_type' => $entity->getEntityTypeId(), '@entity_id' => $entity->id()));
         return $elements;
       }
+      $elements[$delta] = entity_view($entity, $view_mode, $entity->language()->getId());
 
-      if ($entity->id()) {
-        $elements[$delta] = entity_view($entity, $view_mode, $entity->language()->getId());
-
-        // Add a resource attribute to set the mapping property's value to the
-        // entity's url. Since we don't know what the markup of the entity will
-        // be, we shouldn't rely on it for structured data such as RDFa.
-        if (!empty($items[$delta]->_attributes)) {
-          $items[$delta]->_attributes += array('resource' => $entity->url());
-        }
-      }
-      else {
-        // This is an "auto_create" item.
-        $elements[$delta] = array('#markup' => $entity->label());
+      // Add a resource attribute to set the mapping property's value to the
+      // entity's url. Since we don't know what the markup of the entity will
+      // be, we shouldn't rely on it for structured data such as RDFa.
+      if (!empty($items[$delta]->_attributes) && !$entity->isNew() && $entity->hasLinkTemplate('canonical')) {
+        $items[$delta]->_attributes += array('resource' => $entity->toUrl()->toString());
       }
       $depth = 0;
     }
