@@ -18,6 +18,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\TypedData\DataDefinition;
 use Drupal\Core\TypedData\DataReferenceDefinition;
 use Drupal\Core\TypedData\OptionsProviderInterface;
+use Drupal\entity_reference_revisions\EntityNeedsSaveInterface;
 
 /**
  * Defines the 'entity_reference_revisions' entity field type.
@@ -197,6 +198,17 @@ class EntityReferenceRevisionsItem extends EntityReferenceItem implements Option
   /**
    * {@inheritdoc}
    */
+  public function getValue() {
+    $values = parent::getValue();
+    if ($this->entity instanceof EntityNeedsSaveInterface && $this->entity->needsSave()) {
+      $values['entity'] = $this->entity;
+    }
+    return $values;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function onChange($property_name, $notify = TRUE) {
     // Make sure that the target ID and the target property stay in sync.
     if ($property_name == 'entity') {
@@ -243,6 +255,9 @@ class EntityReferenceRevisionsItem extends EntityReferenceItem implements Option
    */
   public function preSave() {
     parent::preSave();
+    if ($this->entity instanceof EntityNeedsSaveInterface && $this->entity->needsSave()) {
+      $this->entity->save();
+    }
     $this->target_revision_id = $this->entity->getRevisionId();
   }
 
