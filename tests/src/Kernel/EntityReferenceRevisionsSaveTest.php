@@ -153,6 +153,8 @@ class EntityReferenceRevisionsSaveTest extends KernelTestBase {
       'type' => 'article',
       'composite_reference' => $entity_test,
     ]);
+    $validate = $node->validate();
+    $this->assertEmpty($validate);
     $node->save();
 
     // Test that the fields on node are properly set.

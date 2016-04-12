@@ -15,8 +15,8 @@ use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\Field\Plugin\Field\FieldType\EntityReferenceItem;
 use Drupal\Core\Field\PreconfiguredFieldUiOptionsInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\TypedData\DataDefinition;
 use Drupal\Core\TypedData\DataReferenceDefinition;
+use Drupal\Core\TypedData\DataReferenceTargetDefinition;
 use Drupal\Core\TypedData\OptionsProviderInterface;
 use Drupal\entity_reference_revisions\EntityNeedsSaveInterface;
 
@@ -111,7 +111,7 @@ class EntityReferenceRevisionsItem extends EntityReferenceItem implements Option
     $properties = parent::propertyDefinitions($field_definition);
 
     if ($target_type_info->getKey('revision')) {
-      $target_revision_id_definition = DataDefinition::create('integer')
+      $target_revision_id_definition = DataReferenceTargetDefinition::create('integer')
         ->setLabel(t('@label revision ID', array($target_type_info->getLabel())))
         ->setSetting('unsigned', TRUE);
 
