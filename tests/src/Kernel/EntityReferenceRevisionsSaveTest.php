@@ -116,6 +116,12 @@ class EntityReferenceRevisionsSaveTest extends KernelTestBase {
     // Check the name is not updated.
     $entity_test_after = EntityTestCompositeRelationship::load($entity_test->id());
     static::assertEquals($entity_test_after->name->value, $text);
+
+    // Test if after delete the referenced entity there are no problems setting
+    // the referencing values to the parent.
+    $entity_test->delete();
+    $node = Node::load($node->id());
+    $node->save();
   }
 
   /**

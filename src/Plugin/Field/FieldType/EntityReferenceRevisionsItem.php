@@ -259,7 +259,9 @@ class EntityReferenceRevisionsItem extends EntityReferenceItem implements Option
     if ($this->entity instanceof EntityNeedsSaveInterface && $this->entity->needsSave()) {
       $this->entity->save();
     }
-    $this->target_revision_id = $this->entity->getRevisionId();
+    if ($this->entity) {
+      $this->target_revision_id = $this->entity->getRevisionId();
+    }
   }
 
   /**
