@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\entity_reference_revisions\Plugin\DataType\EntityReferenceRevisions.
- */
-
 namespace Drupal\entity_reference_revisions\Plugin\DataType;
 
 use Drupal\Core\Entity\EntityInterface;

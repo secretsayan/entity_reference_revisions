@@ -1,11 +1,4 @@
 <?php
-/**
- * @file
- * Contains \Drupal\entity_reference_revisions\EntityReferenceRevisionsAutocompleteTest.
- *
- * entity_reference_revisions configuration test functions.
- *
- */
 
 namespace Drupal\entity_reference_revisions\Tests;
 

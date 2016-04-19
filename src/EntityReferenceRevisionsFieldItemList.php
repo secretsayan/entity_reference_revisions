@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\entity_reference_revisions\EntityReferenceRevisionsFieldItemList.
- */
-
 namespace Drupal\entity_reference_revisions;
 
 use Drupal\Core\Entity\FieldableEntityInterface;

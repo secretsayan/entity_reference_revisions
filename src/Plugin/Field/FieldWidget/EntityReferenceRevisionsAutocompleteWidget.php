@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\entity_reference_revisions\Plugin\Field\FieldWidget\EntityReferenceRevisionsAutocompleteWidget.
- */
-
 namespace Drupal\entity_reference_revisions\Plugin\Field\FieldWidget;
 
 use Drupal\Core\Entity\Entity;

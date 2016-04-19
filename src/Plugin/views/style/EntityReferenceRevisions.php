@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\entity_reference_revisions\Plugin\views\style\EntityReferenceRevisions.
- */
-
 namespace Drupal\entity_reference\Plugin\views\style;
 
 use Drupal\Component\Utility\Xss;
