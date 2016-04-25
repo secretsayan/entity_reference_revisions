@@ -4,7 +4,6 @@ namespace Drupal\entity_reference_revisions;
 
 use Drupal\Core\Entity\FieldableEntityInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Field\FieldItemList;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Field\EntityReferenceFieldItemList;
 use Drupal\Core\Field\EntityReferenceFieldItemListInterface;
@@ -38,7 +37,7 @@ class EntityReferenceRevisionsFieldItemList extends EntityReferenceFieldItemList
     if ($ids) {
       $target_type = $this->getFieldDefinition()->getSetting('target_type');
       foreach ($ids as $delta => $target_id) {
-        $entity = \Drupal::entityManager()->getStorage($target_type)->loadRevision($target_id);
+        $entity = \Drupal::entityTypeManager()->getStorage($target_type)->loadRevision($target_id);
         if ($entity) {
           $target_entities[$delta] = $entity;
         }
@@ -69,7 +68,7 @@ class EntityReferenceRevisionsFieldItemList extends EntityReferenceFieldItemList
         $entity_ids = \Drupal::entityQuery($target_type)
           ->condition('uuid', $uuids, 'IN')
           ->execute();
-        $entities = \Drupal::entityManager()
+        $entities = \Drupal::entityTypeManager()
           ->getStorage($target_type)
           ->loadMultiple($entity_ids);
 
@@ -109,7 +108,7 @@ class EntityReferenceRevisionsFieldItemList extends EntityReferenceFieldItemList
 
     $entities = array();
     foreach($ids as $id) {
-      $entities[$id] = \Drupal::entityManager()
+      $entities[$id] = \Drupal::entityTypeManager()
         ->getStorage($this->getSetting('target_type'))
         ->loadRevision($id);
     }

@@ -87,7 +87,7 @@ class EntityReferenceRevisions extends StylePluginBase {
       foreach ($records as $values) {
         // Sanitize HTML, remove line breaks and extra whitespace.
         $output = $this->view->rowPlugin->render($values);
-        $output = drupal_render($output);
+        $output = \Drupal::service('renderer')->render($output);
         $results[$values->{$id_field_alias}] = Xss::filterAdmin(preg_replace('/\s\s+/', ' ', str_replace("\n", '', $output)));
       }
     }
