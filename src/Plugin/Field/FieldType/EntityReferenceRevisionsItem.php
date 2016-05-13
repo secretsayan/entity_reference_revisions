@@ -107,7 +107,7 @@ class EntityReferenceRevisionsItem extends EntityReferenceItem implements Option
 
     if ($target_type_info->getKey('revision')) {
       $target_revision_id_definition = DataReferenceTargetDefinition::create('integer')
-        ->setLabel(t('@label revision ID', array($target_type_info->getLabel())))
+        ->setLabel(t('@label revision ID', array('@label' => $target_type_info->getLabel())))
         ->setSetting('unsigned', TRUE);
 
       $target_revision_id_definition->setRequired(TRUE);

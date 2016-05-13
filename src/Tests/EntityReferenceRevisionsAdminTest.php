@@ -107,6 +107,12 @@ class EntityReferenceRevisionsAdminTest extends WebTestBase {
     $this->drupalPostForm('admin/structure/types/manage/entity_revisions/fields/add-field', $edit, t('Save and continue'));
     $this->assertNoOption('edit-settings-target-type', 'user');
     $this->assertOption('edit-settings-target-type', 'node');
+
+    // Check that the property definitions label are set properly.
+    $properties = $node->getFieldDefinition('field_entity_reference_revisions')->getFieldStorageDefinition()->getPropertyDefinitions();
+    $this->assertEqual((string) $properties['target_revision_id']->getLabel(), 'Content revision ID');
+    $this->assertEqual((string) $properties['target_id']->getLabel(), 'Content ID');
+    $this->assertEqual((string) $properties['entity']->getLabel(), 'Content');
   }
 
 }
