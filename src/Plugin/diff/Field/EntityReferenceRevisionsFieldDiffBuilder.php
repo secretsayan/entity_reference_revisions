@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\entity_reference_revisions\Plugin\Diff;
+namespace Drupal\entity_reference_revisions\Plugin\diff\Field;
 
 use Drupal\diff\FieldDiffBuilderBase;
 use Drupal\Core\Field\FieldItemListInterface;
