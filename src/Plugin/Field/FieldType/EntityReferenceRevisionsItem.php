@@ -248,7 +248,20 @@ class EntityReferenceRevisionsItem extends EntityReferenceItem implements Option
    */
   public function preSave() {
     parent::preSave();
-    if ($this->entity instanceof EntityNeedsSaveInterface && $this->entity->needsSave()) {
+    $host = $this->getEntity();
+    $needs_save = $this->entity instanceof EntityNeedsSaveInterface && $this->entity->needsSave();
+
+    // Create a new revision if this is a composite entity in a host with a new
+    // revision.
+    if ($host->isNewRevision() && $this->entity && $this->entity->getEntityType()->get('entity_revision_parent_id_field')) {
+      $this->entity->setNewRevision();
+      if ($host->isDefaultRevision()) {
+        $this->entity->isDefaultRevision(TRUE);
+      }
+      $needs_save = TRUE;
+    }
+
+    if ($needs_save) {
       $this->entity->save();
     }
     if ($this->entity) {
