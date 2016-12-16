@@ -27,7 +27,7 @@ use Drupal\entity_reference_revisions\EntityNeedsSaveInterface;
  * @FieldType(
  *   id = "entity_reference_revisions",
  *   label = @Translation("Entity reference revisions"),
- *   description = @Translation("An entity field containing an entity reference."),
+ *   description = @Translation("An entity field containing an entity reference to a specific revision."),
  *   category = @Translation("Reference revisions"),
  *   no_ui = FALSE,
  *   class = "\Drupal\entity_reference_revisions\Plugin\Field\FieldType\EntityReferenceRevisionsItem",
@@ -309,9 +309,12 @@ class EntityReferenceRevisionsItem extends EntityReferenceItem implements Option
   public function delete() {
     parent::delete();
     if ($this->entity && $this->entity->getEntityType()->get('entity_revision_parent_type_field') && $this->entity->getEntityType()->get('entity_revision_parent_id_field')) {
-      $this->entity->delete();
+      // Only delete composite entities if the host field is not translatable.
+      if (!$this->getFieldDefinition()->isTranslatable()) {
+        $this->entity->delete();
+      }
     }
-}
+  }
  /**
  * {@inheritdoc}
  */
