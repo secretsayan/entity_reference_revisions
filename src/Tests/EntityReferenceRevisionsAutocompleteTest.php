@@ -80,7 +80,6 @@ class EntityReferenceRevisionsAutocompleteTest extends WebTestBase {
     $edit = array(
       'info[0][value]' => $block_label,
       'body[0][value]' => $block_content,
-      'revision' => TRUE,
     );
     $this->drupalPostForm('block/add', $edit, t('Save'));
     $block = $this->drupalGetBlockByInfo($block_label);
