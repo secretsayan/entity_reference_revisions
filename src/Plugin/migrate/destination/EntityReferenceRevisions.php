@@ -141,11 +141,13 @@ class EntityReferenceRevisions extends EntityRevision {
   protected function rollbackNonTranslation(array $destination_identifiers) {
     $revision_id = array_pop($destination_identifiers);
     $entity = $this->storage->loadRevision($revision_id);
-    if ($entity->isDefaultRevision()) {
-      $entity->delete();
-    }
-    else {
-      $this->storage->deleteRevision($revision_id);
+    if ($entity) {
+      if ($entity->isDefaultRevision()) {
+        $entity->delete();
+      }
+      else {
+        $this->storage->deleteRevision($revision_id);
+      }
     }
   }
 }
