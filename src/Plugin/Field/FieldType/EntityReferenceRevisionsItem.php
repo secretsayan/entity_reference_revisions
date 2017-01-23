@@ -103,6 +103,7 @@ class EntityReferenceRevisionsItem extends EntityReferenceItem implements Option
   public static function propertyDefinitions(FieldStorageDefinitionInterface $field_definition) {
     $settings = $field_definition->getSettings();
     $target_type_info = \Drupal::entityTypeManager()->getDefinition($settings['target_type']);
+
     $properties = parent::propertyDefinitions($field_definition);
 
     if ($target_type_info->getKey('revision')) {
@@ -247,9 +248,27 @@ class EntityReferenceRevisionsItem extends EntityReferenceItem implements Option
    * {@inheritdoc}
    */
   public function preSave() {
+    $has_new = $this->hasNewEntity();
+
+    // If it is a new entity, parent will save it.
     parent::preSave();
-    if ($this->entity instanceof EntityNeedsSaveInterface && $this->entity->needsSave()) {
-      $this->entity->save();
+
+    if (!$has_new) {
+      // Create a new revision if it is a composite entity in a host with a new
+      // revision.
+
+      $host = $this->getEntity();
+      $needs_save = $this->entity instanceof EntityNeedsSaveInterface && $this->entity->needsSave();
+      if ($host->isNewRevision() && $this->entity && $this->entity->getEntityType()->get('entity_revision_parent_id_field')) {
+        $this->entity->setNewRevision();
+        if ($host->isDefaultRevision()) {
+          $this->entity->isDefaultRevision(TRUE);
+        }
+        $needs_save = TRUE;
+      }
+      if ($needs_save) {
+        $this->entity->save();
+      }
     }
     if ($this->entity) {
       $this->target_revision_id = $this->entity->getRevisionId();
@@ -261,6 +280,7 @@ class EntityReferenceRevisionsItem extends EntityReferenceItem implements Option
    */
   public function postSave($update) {
     parent::postSave($update);
+
     $needs_save = FALSE;
     // If any of entity, parent type or parent id is missing then return.
     if (!$this->entity || !$this->entity->getEntityType()->get('entity_revision_parent_type_field') || !$this->entity->getEntityType()->get('entity_revision_parent_id_field')) {
@@ -308,6 +328,7 @@ class EntityReferenceRevisionsItem extends EntityReferenceItem implements Option
    */
   public function delete() {
     parent::delete();
+
     if ($this->entity && $this->entity->getEntityType()->get('entity_revision_parent_type_field') && $this->entity->getEntityType()->get('entity_revision_parent_id_field')) {
       // Only delete composite entities if the host field is not translatable.
       if (!$this->getFieldDefinition()->isTranslatable()) {

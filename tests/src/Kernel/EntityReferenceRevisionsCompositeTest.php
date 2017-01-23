@@ -78,6 +78,7 @@ class EntityReferenceRevisionsCompositeTest extends EntityKernelTestBase {
     ));
     $composite->save();
 
+
     // Create a node with a reference to the test composite entity.
     $node = Node::create(array(
       'title' => $this->randomMachineName(),
@@ -86,11 +87,39 @@ class EntityReferenceRevisionsCompositeTest extends EntityKernelTestBase {
     ));
     $node->save();
 
+    // Assert that there is only 1 revision when creating a node.
+    $node_revisions_count = \Drupal::entityQuery('node')->condition('nid', $node->id())->allRevisions()->count()->execute();
+    $this->assertEqual($node_revisions_count, 1);
+
     // Verify the value of parent type and id after create a node.
     $composite = EntityTestCompositeRelationship::load($composite->id());
     $this->assertEqual($composite->parent_type->value, $node->getEntityTypeId());
     $this->assertEqual($composite->parent_id->value, $node->id());
     $this->assertEqual($composite->parent_field_name->value, 'composite_reference');
+    // Create second revision of the node.
+    $original_composite_revision = $node->composite_reference[0]->target_revision_id;
+    $original_node_revision = $node->getRevisionId();
+    $node->setTitle('2nd revision');
+    $node->setNewRevision();
+    $node->save();
+    $node = node_load($node->id(), TRUE);
+    // Check the revision of the node.
+    $this->assertEqual('2nd revision', $node->getTitle(), 'New node revision has changed data.');
+    $this->assertNotEqual($original_composite_revision, $node->composite_reference[0]->target_revision_id, 'Composite entity got new revision when its host did.');
+
+    // Make sure that there are only 2 revisions.
+    $node_revisions_count = \Drupal::entityQuery('node')->condition('nid', $node->id())->allRevisions()->count()->execute();
+    $this->assertEqual($node_revisions_count, 2);
+
+    // Revert to first revision of the node.
+    $node = \Drupal::entityTypeManager()->getStorage('node')->loadRevision($original_node_revision);
+    $node->setNewRevision();
+    $node->isDefaultRevision(TRUE);
+    $node->save();
+    $node = node_load($node->id(), TRUE);
+    // Check the revision of the node.
+    $this->assertNotEqual('2nd revision', $node->getTitle(), 'Node did not keep changed title after reversion.');
+    $this->assertNotEqual($original_composite_revision, $node->composite_reference[0]->target_revision_id, 'Composite entity got new revision when its host reverted to an old revision.');
 
     // Test that the composite entity is deleted when its parent is deleted.
     $node->delete();
