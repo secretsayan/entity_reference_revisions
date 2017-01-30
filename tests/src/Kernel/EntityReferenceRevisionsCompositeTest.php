@@ -78,6 +78,9 @@ class EntityReferenceRevisionsCompositeTest extends EntityKernelTestBase {
     ));
     $composite->save();
 
+    // Assert that there is only 1 revision of the composite entity.
+    $composite_revisions_count = \Drupal::entityQuery('entity_test_composite')->condition('uuid', $composite->uuid())->allRevisions()->count()->execute();
+    $this->assertEquals(1, $composite_revisions_count);
 
     // Create a node with a reference to the test composite entity.
     $node = Node::create(array(
@@ -90,6 +93,9 @@ class EntityReferenceRevisionsCompositeTest extends EntityKernelTestBase {
     // Assert that there is only 1 revision when creating a node.
     $node_revisions_count = \Drupal::entityQuery('node')->condition('nid', $node->id())->allRevisions()->count()->execute();
     $this->assertEqual($node_revisions_count, 1);
+    // Assert there is no new composite revision after creating a host entity.
+    $composite_revisions_count = \Drupal::entityQuery('entity_test_composite')->condition('uuid', $composite->uuid())->allRevisions()->count()->execute();
+    $this->assertEquals(1, $composite_revisions_count);
 
     // Verify the value of parent type and id after create a node.
     $composite = EntityTestCompositeRelationship::load($composite->id());

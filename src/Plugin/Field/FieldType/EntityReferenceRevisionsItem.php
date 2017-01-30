@@ -259,7 +259,7 @@ class EntityReferenceRevisionsItem extends EntityReferenceItem implements Option
 
       $host = $this->getEntity();
       $needs_save = $this->entity instanceof EntityNeedsSaveInterface && $this->entity->needsSave();
-      if ($host->isNewRevision() && $this->entity && $this->entity->getEntityType()->get('entity_revision_parent_id_field')) {
+      if (!$host->isNew() && $host->isNewRevision() && $this->entity && $this->entity->getEntityType()->get('entity_revision_parent_id_field')) {
         $this->entity->setNewRevision();
         if ($host->isDefaultRevision()) {
           $this->entity->isDefaultRevision(TRUE);
