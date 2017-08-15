@@ -179,7 +179,7 @@ class EntityReferenceRevisionsItem extends EntityReferenceItem implements Option
         // If the entity has been saved and we're trying to set both the
         // target_id and the entity values with a non-null target ID, then the
         // value for target_id should match the ID of the entity value.
-        if (!$this->entity->isNew() && $values['target_id'] !== NULL && ($entity_id !== $values['target_id'])) {
+        if (!$this->entity->isNew() && $values['target_id'] !== NULL && ($entity_id != $values['target_id'])) {
           throw new \InvalidArgumentException('The target id and entity passed to the entity reference item do not match.');
         }
       }
