@@ -14,6 +14,7 @@ use Drupal\simpletest\WebTestBase;
 class EntityReferenceRevisionsAdminTest extends WebTestBase {
 
   use FieldUiTestTrait;
+  use EntityReferenceRevisionsCoreVersionUiTestTrait;
 
   /**
    * Modules to enable.
@@ -90,7 +91,7 @@ class EntityReferenceRevisionsAdminTest extends WebTestBase {
       'title[0][value]' => $title,
       'body[0][value]' => 'Revision 1',
     );
-    $this->drupalPostForm('node/add/article', $edit, t('Save and publish'));
+    $this->drupalPostNodeForm('node/add/article', $edit, t('Save and publish'));
     $this->assertText($title);
     $this->assertText('Revision 1');
     $node = $this->drupalGetNodeByTitle($title);
@@ -103,7 +104,7 @@ class EntityReferenceRevisionsAdminTest extends WebTestBase {
       'title[0][value]' => 'Entity reference revision content',
       'field_entity_reference_revisions[1][target_id]' => $node->label() . ' (' . $node->id() . ')',
     ];
-    $this->drupalPostForm(NULL, $edit, t('Save and publish'));
+    $this->drupalPostNodeForm(NULL, $edit, t('Save and publish'));
     $this->assertLinkByHref('node/' . $node_target->id());
     $this->assertText('Entity revisions Entity reference revision content has been created.');
     $this->assertText('Entity reference revision content');
@@ -115,7 +116,7 @@ class EntityReferenceRevisionsAdminTest extends WebTestBase {
       'body[0][value]' => 'Revision 2',
       'revision' => TRUE,
     );
-    $this->drupalPostForm('node/' . $node->id() . '/edit', $edit, t('Save and keep published'));
+    $this->drupalPostNodeForm('node/' . $node->id() . '/edit', $edit, t('Save and keep published'));
     $this->assertText($title);
     $this->assertText('Revision 2');
 
