@@ -39,12 +39,6 @@ class EntityReferenceRevisionsAdminTest extends WebTestBase {
     $this->drupalCreateContentType(array('type' => 'article', 'name' => 'Article'));
     // Place the breadcrumb, tested in fieldUIAddNewField().
     $this->drupalPlaceBlock('system_breadcrumb_block');
-  }
-
-  /**
-   * Tests the entity reference revisions configuration.
-   */
-  public function testEntityReferenceRevisions() {
     $admin_user = $this->drupalCreateUser(array(
       'administer site configuration',
       'administer nodes',
@@ -56,7 +50,12 @@ class EntityReferenceRevisionsAdminTest extends WebTestBase {
       'edit any article content',
     ));
     $this->drupalLogin($admin_user);
+  }
 
+  /**
+   * Tests the entity reference revisions configuration.
+   */
+  public function testEntityReferenceRevisions() {
     // Create a test target node used as entity reference by another test node.
     $node_target = Node::create([
       'title' => 'Target node',
@@ -147,6 +146,39 @@ class EntityReferenceRevisionsAdminTest extends WebTestBase {
     $this->assertEqual((string) $properties['target_revision_id']->getLabel(), 'Content revision ID');
     $this->assertEqual((string) $properties['target_id']->getLabel(), 'Content ID');
     $this->assertEqual((string) $properties['entity']->getLabel(), 'Content');
+  }
+
+  /**
+   * Tests target bundle settings for an entity reference revisions field.
+   */
+  public function testMultipleTargetBundles() {
+    // Create a couple of content types for the ERR field to point to.
+    $target_types = [];
+    for ($i = 0; $i < 2; $i++) {
+      $target_types[$i] = $this->drupalCreateContentType([
+        'type' => strtolower($this->randomMachineName()),
+        'name' => 'Test type ' . $i
+      ]);
+    }
+
+    // Create a new field that can point to either target content type.
+    $node_type_path = 'admin/structure/types/manage/entity_revisions';
+
+    // Generate a random field name, must be only lowercase characters.
+    $field_name = strtolower($this->randomMachineName());
+
+    $field_edit = [];
+    $storage_edit = ['settings[target_type]' => 'node', 'cardinality' => '-1'];
+    $field_edit['settings[handler_settings][target_bundles][' . $target_types[0]->id() . ']'] = TRUE;
+    $field_edit['settings[handler_settings][target_bundles][' . $target_types[1]->id() . ']'] = TRUE;
+
+    $this->fieldUIAddNewField($node_type_path, $field_name, 'Entity reference revisions', 'entity_reference_revisions', $storage_edit, $field_edit);
+
+    // Deleting one of these content bundles at this point should only delete
+    // that bundle's body field. Test that there is no second field that will
+    // be deleted.
+    $this->drupalGet('/admin/structure/types/manage/' . $target_types[0]->id() . '/delete');
+    $this->assertNoFieldByXPath('(//details[@id="edit-entity-deletes"]//ul[@data-drupal-selector="edit-field-config"]/li)[2]');
   }
 
 }
