@@ -301,6 +301,22 @@ class EntityReferenceRevisionsItem extends EntityReferenceItem implements Option
       }
     }
 
+    // Keep in sync the translation languages between the parent and the child.
+    // For non translatable fields we have to do this in ::preSave but for
+    // translatable fields we have all the information we need in ::delete.
+    if (isset($parent_entity->original) && !$this->getFieldDefinition()->isTranslatable()) {
+      $langcodes = array_keys($parent_entity->getTranslationLanguages());
+      $original_langcodes = array_keys($parent_entity->original->getTranslationLanguages());
+      if ($removed_langcodes = array_diff($original_langcodes, $langcodes)) {
+        foreach ($removed_langcodes as $removed_langcode) {
+          if ($entity->hasTranslation($removed_langcode)) {
+            $entity->removeTranslation($removed_langcode);
+          }
+        }
+        $needs_save = TRUE;
+      }
+    }
+
     $parent_type = $entity->getEntityType()->get('entity_revision_parent_type_field');
     $parent_id = $entity->getEntityType()->get('entity_revision_parent_id_field');
 
