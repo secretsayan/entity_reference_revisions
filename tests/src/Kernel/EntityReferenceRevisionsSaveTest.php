@@ -263,4 +263,56 @@ class EntityReferenceRevisionsSaveTest extends KernelTestBase {
     $this->assertEquals($dependencies['config'][1], 'node.type.article');
     $this->assertEquals($dependencies['module'][0], 'entity_reference_revisions');
   }
+
+  /**
+   * Tests FieldType\EntityReferenceRevisionsItem::deleteRevision
+   */
+  public function testEntityReferenceRevisionsDeleteHandleDeletedChild() {
+    $field_storage = FieldStorageConfig::create([
+      'field_name' => 'field_reference',
+      'entity_type' => 'node',
+      'type' => 'entity_reference_revisions',
+      'settings' => [
+        'target_type' => 'node',
+      ],
+    ]);
+    $field_storage->save();
+    $field = FieldConfig::create([
+      'field_storage' => $field_storage,
+      'bundle' => 'article',
+    ]);
+    $field->save();
+
+    $child = Node::create([
+      'type' => 'article',
+      'title' => 'Child node',
+    ]);
+    $child->save();
+
+    $node = Node::create([
+      'type' => 'article',
+      'title' => 'Parent node',
+      'field_reference' => [
+        [
+          'target_id' => $child->id(),
+          'target_revision_id' => $child->getRevisionId(),
+        ]
+      ],
+    ]);
+
+    // Create two revisions.
+    $node->save();
+    $revisionId = $node->getRevisionId();
+    $node->setNewRevision(TRUE);
+    $node->save();
+
+    // Force delete the child Paragraph.
+    // Core APIs allow this although it is an inconsistent storage situation
+    // for Paragraphs.
+    $child->delete();
+
+    // Previously deleting a revision with a lost child failed fatal.
+    \Drupal::entityTypeManager()->getStorage('node')->deleteRevision($revisionId);
+  }
+
 }

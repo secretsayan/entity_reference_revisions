@@ -345,8 +345,11 @@ class EntityReferenceRevisionsItem extends EntityReferenceItem implements Option
    */
   public function deleteRevision() {
     $child = $this->entity;
-    if ($child->isDefaultRevision()) {
-      // Do not delete if it is the default revision.
+    // Return early, and do not delete the child revision, when the child
+    // revision is either:
+    // 1: Missing.
+    // 2: A default revision.
+    if (!$child || $child->isDefaultRevision()) {
       return;
     }
 
