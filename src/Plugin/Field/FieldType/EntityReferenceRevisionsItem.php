@@ -2,6 +2,7 @@
 
 namespace Drupal\entity_reference_revisions\Plugin\Field\FieldType;
 
+use Drupal\Component\Utility\Random;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Entity\TypedData\EntityDataDefinition;
