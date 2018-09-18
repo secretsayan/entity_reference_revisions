@@ -324,7 +324,7 @@ class EntityReferenceRevisionsItem extends EntityReferenceItem implements Option
       $original_langcodes = array_keys($parent_entity->original->getTranslationLanguages());
       if ($removed_langcodes = array_diff($original_langcodes, $langcodes)) {
         foreach ($removed_langcodes as $removed_langcode) {
-          if ($entity->hasTranslation($removed_langcode)) {
+          if ($entity->hasTranslation($removed_langcode)  && $entity->getUntranslated()->language()->getId() != $removed_langcode) {
             $entity->removeTranslation($removed_langcode);
           }
         }

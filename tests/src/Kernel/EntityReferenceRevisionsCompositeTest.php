@@ -183,13 +183,20 @@ class EntityReferenceRevisionsCompositeTest extends EntityKernelTestBase {
     $this->assertEqual($composite->parent_field_name->value, 'composite_reference');
     $this->assertTrue($composite->hasTranslation('de'));
 
-    // Test that the composite entity is not when the german translation of the
-    // parent is deleted.
+    // Test that the composite entity is not deleted when the german translation
+    // of the parent is deleted.
     $node->removeTranslation('de');
     $node->save();
     $composite = EntityTestCompositeRelationship::load($composite->id());
     $this->assertNotNull($composite);
     $this->assertFalse($composite->hasTranslation('de'));
+
+    // Change the language of the entity, ensure that doesn't try to delete
+    // the default translation.
+    $node->set('langcode', 'de');
+    $node->save();
+    $composite = EntityTestCompositeRelationship::load($composite->id());
+    $this->assertNotNull($composite);
 
     // Test that the composite entity is deleted when its parent is deleted.
     $node->delete();
