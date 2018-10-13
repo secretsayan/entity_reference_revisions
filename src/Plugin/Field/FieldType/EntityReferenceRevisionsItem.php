@@ -372,6 +372,7 @@ class EntityReferenceRevisionsItem extends EntityReferenceItem implements Option
     $all_revisions = \Drupal::entityQuery($host->getEntityTypeId())
       ->condition($field_name, $child->getRevisionId())
       ->allRevisions()
+      ->accessCheck(FALSE)
       ->execute();
 
     if (count($all_revisions) > 1) {
