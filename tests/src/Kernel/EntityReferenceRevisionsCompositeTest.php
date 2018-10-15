@@ -9,8 +9,8 @@ use Drupal\KernelTests\Core\Entity\EntityKernelTestBase;
 use Drupal\language\Entity\ConfigurableLanguage;
 use Drupal\node\Entity\Node;
 use Drupal\node\Entity\NodeType;
-use Drupal\simpletest\ContentTypeCreationTrait;
-use Drupal\simpletest\NodeCreationTrait;
+use Drupal\Tests\node\Traits\ContentTypeCreationTrait;
+use Drupal\Tests\node\Traits\NodeCreationTrait;
 
 /**
  * Tests the entity_reference_revisions composite relationship.
@@ -102,11 +102,14 @@ class EntityReferenceRevisionsCompositeTest extends EntityKernelTestBase {
     $this->assertEquals(1, $composite_revisions_count);
 
     // Create a node with a reference to the test composite entity.
+    /** @var \Drupal\node\NodeInterface $node */
     $node = Node::create(array(
       'title' => $this->randomMachineName(),
       'type' => 'article',
-      'composite_reference' => $composite,
     ));
+    $node->save();
+    $node->set('composite_reference', $composite);
+    $this->assertTrue($node->hasTranslationChanges());
     $node->save();
 
     // Assert that there is only 1 revision when creating a node.
@@ -145,6 +148,14 @@ class EntityReferenceRevisionsCompositeTest extends EntityKernelTestBase {
     // Check the revision of the node.
     $this->assertNotEqual('2nd revision', $node->getTitle(), 'Node did not keep changed title after reversion.');
     $this->assertNotEqual($original_composite_revision, $node->composite_reference[0]->target_revision_id, 'Composite entity got new revision when its host reverted to an old revision.');
+
+    // Test that removing/changing composite references results in translation
+    // changes.
+    $node->set('composite_reference', []);
+    $this->assertTrue($node->hasTranslationChanges());
+
+    // Revert the changes to avoid interfering with the delete test.
+    $node->set('composite_reference', $composite);
 
     // Test that the composite entity is deleted when its parent is deleted.
     $node->delete();
