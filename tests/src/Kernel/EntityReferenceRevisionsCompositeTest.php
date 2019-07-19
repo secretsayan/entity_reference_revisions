@@ -160,6 +160,29 @@ class EntityReferenceRevisionsCompositeTest extends EntityKernelTestBase {
     // Test that the composite entity is deleted when its parent is deleted.
     $node->delete();
     $this->assertNull(EntityTestCompositeRelationship::load($composite->id()));
+
+    // Test that the deleting composite entity does not break the parent entity
+    // when creating a new revision.
+    $composite = EntityTestCompositeRelationship::create([
+      'name' => $this->randomMachineName(),
+    ]);
+    $composite->save();
+    // Create a node with a reference to the test composite entity.
+    /** @var \Drupal\node\NodeInterface $node */
+    $node = Node::create([
+      'title' => $this->randomMachineName(),
+      'type' => 'article',
+      'composite_reference' => $composite,
+    ]);
+    $node->save();
+    // Delete the composite entity.
+    $composite->delete();
+    // Re-apply the field item values to unset the computed "entity" property.
+    $field_item = $node->get('composite_reference')->get(0);
+    $field_item->setValue($field_item->getValue(), FALSE);
+
+    $new_revision = $this->entityTypeManager->getStorage('node')->createRevision($node);
+    $this->assertTrue($new_revision->get('composite_reference')->isEmpty());
   }
 
   /**

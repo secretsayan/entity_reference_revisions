@@ -249,6 +249,11 @@ function entity_reference_revisions_entity_revision_create(ContentEntityInterfac
 
           $values = [];
           foreach ($items as $delta => $item) {
+            // If the target entity is missing, let's skip it.
+            if (empty($item->entity)) {
+              continue;
+            }
+
             // Use the item from the translation if it exists.
             // If we have translation items, use that if one with the matching
             // target id exists.
