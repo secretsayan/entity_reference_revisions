@@ -51,6 +51,13 @@ class EntityReferenceRevisionsCompositeTest extends EntityKernelTestBase {
   protected $entityTypeManager;
 
   /**
+   * The cron service.
+   *
+   * @var \Drupal\Core\Cron
+   */
+  protected $cron;
+
+  /**
    * {@inheritdoc}
    */
   protected function setUp() {
@@ -79,9 +86,10 @@ class EntityReferenceRevisionsCompositeTest extends EntityKernelTestBase {
     ));
     $field->save();
 
-    // Inject database connection and entity type manager for the tests.
+    // Inject database connection, entity type manager and cron for the tests.
     $this->database = \Drupal::database();
     $this->entityTypeManager = \Drupal::entityTypeManager();
+    $this->cron = \Drupal::service('cron');
   }
 
   /**
@@ -159,6 +167,9 @@ class EntityReferenceRevisionsCompositeTest extends EntityKernelTestBase {
 
     // Test that the composite entity is deleted when its parent is deleted.
     $node->delete();
+    $this->assertNotNull(EntityTestCompositeRelationship::load($composite->id()));
+
+    $this->cron->run();
     $this->assertNull(EntityTestCompositeRelationship::load($composite->id()));
 
     // Test that the deleting composite entity does not break the parent entity
@@ -234,6 +245,7 @@ class EntityReferenceRevisionsCompositeTest extends EntityKernelTestBase {
 
     // Test that the composite entity is deleted when its parent is deleted.
     $node->delete();
+    $this->cron->run();
     $composite = EntityTestCompositeRelationship::load($composite->id());
     $this->assertNull($composite);
   }
@@ -332,6 +344,7 @@ class EntityReferenceRevisionsCompositeTest extends EntityKernelTestBase {
 
     // Test that the composite entity is deleted when its parent is deleted.
     $node->delete();
+    $this->cron->run();
     $composite = EntityTestCompositeRelationship::load($composite->id());
     $this->assertNull($composite);
   }
@@ -439,8 +452,235 @@ class EntityReferenceRevisionsCompositeTest extends EntityKernelTestBase {
 
     // Test that the composite entity is deleted when its parent is deleted.
     $node->delete();
+    $this->cron->run();
     $composite = EntityTestCompositeRelationship::load($composite2->id());
     $this->assertNull($composite);
+  }
+
+  /**
+   * Tests the composite entity is deleted after removing its reference.
+   */
+  public function testCompositeDeleteAfterRemovingReference() {
+    list($composite, $node) = $this->assignCompositeToNode();
+
+    // Remove reference to the composite entity from the node.
+    $node->set('composite_reference', NULL);
+    $node->save();
+
+    // Verify that the composite entity is not yet removed after deleting the
+    // parent.
+    $node->delete();
+    $composite = EntityTestCompositeRelationship::load($composite->id());
+    $this->assertNotNull($composite);
+
+    // Verify that the composite entity is removed after running cron.
+    $this->cron->run();
+    $composite = EntityTestCompositeRelationship::load($composite->id());
+    $this->assertNull($composite);
+  }
+
+  /**
+   * Tests the composite entity is deleted after removing its reference.
+   *
+   * Includes revisions on the host entity.
+   */
+  public function testCompositeDeleteAfterRemovingReferenceWithRevisions() {
+    list($composite, $node) = $this->assignCompositeToNode();
+
+    // Remove reference to the composite entity from the node in a new revision.
+    $node->set('composite_reference', NULL);
+    $node->setNewRevision();
+    $node->save();
+    $composite = EntityTestCompositeRelationship::load($composite->id());
+    // Verify the composite entity is not removed on nodes with revisions.
+    $this->assertNotNull($composite);
+
+    // Verify that the composite entity is not yet removed after deleting the
+    // parent.
+    $node->delete();
+    $composite = EntityTestCompositeRelationship::load($composite->id());
+    $this->assertNotNull($composite);
+
+    // Verify that the composite entity is removed after running cron.
+    $this->cron->run();
+    $composite = EntityTestCompositeRelationship::load($composite->id());
+    $this->assertNull($composite);
+  }
+
+  /**
+   * Tests the composite entity is not deleted when changing parents.
+   *
+   * Includes revisions on the host entity.
+   */
+  public function testCompositeDeleteAfterChangingParent() {
+    list($composite, $node) = $this->assignCompositeToNode();
+    // Remove reference to the composite entity from the node.
+    $node->set('composite_reference', NULL);
+    $node->setNewRevision();
+    $node->save();
+
+    // Setting a new revision of the composite entity in the second node.
+    $composite = EntityTestCompositeRelationship::load($composite->id());
+    $composite->setNewRevision(TRUE);
+    $composite->save();
+    $second_node = Node::create([
+      'title' => 'Second node',
+      'type' => 'article',
+      'composite_reference' => $composite,
+    ]);
+    $second_node->save();
+    // Remove reference to the composite entity from the node.
+    $second_node->set('composite_reference', NULL);
+    $second_node->setNewRevision(TRUE);
+    $second_node->save();
+    // Verify the composite entity is not removed on nodes with revisions.
+    $composite = EntityTestCompositeRelationship::load($composite->id());
+    $this->assertNotNull($composite);
+    // Verify the amount of revisions of each entity.
+    $this->assertRevisionCount(2, 'entity_test_composite', $composite->id());
+    $this->assertRevisionCount(2, 'node', $node->id());
+    $this->assertRevisionCount(2, 'node', $second_node->id());
+    // Test that the composite entity is not deleted when its new parent is
+    // deleted, since it is still being used in a previous revision with a
+    // different parent.
+    $second_node->delete();
+    $this->cron->run();
+    $composite = EntityTestCompositeRelationship::load($composite->id());
+    $this->assertNotNull($composite);
+
+    // Delete the parent of the previous revision.
+    $node->delete();
+
+    // Verify that the composite entity is removed after running cron.
+    $this->cron->run();
+    $composite = EntityTestCompositeRelationship::load($composite->id());
+    $this->assertNull($composite);
+  }
+
+  /**
+   * Composite entity with revisions isn't deleted when changing parents.
+   *
+   * Includes revisions on the host entity.
+   */
+  public function testCompositeDeleteRevisionAfterChangingParent() {
+    list($composite, $node) = $this->assignCompositeToNode();
+    // Remove reference to the composite entity from the node.
+    $node->set('composite_reference', NULL);
+    $node->setNewRevision();
+    $node->save();
+
+    // Setting a new revision of the composite entity in the second node.
+    $composite = EntityTestCompositeRelationship::load($composite->id());
+    $composite->setNewRevision(TRUE);
+    $composite->save();
+    $composite = EntityTestCompositeRelationship::load($composite->id());
+    $second_node = Node::create([
+      'title' => 'Second node',
+      'type' => 'article',
+      'composite_reference' => $composite,
+    ]);
+    $second_node->save();
+    // Remove reference to the composite entity from the node.
+    $second_node->set('composite_reference', NULL);
+    $second_node->setNewRevision(TRUE);
+    $second_node->save();
+    // Verify the composite entity is not removed on nodes with revisions.
+    $composite = EntityTestCompositeRelationship::load($composite->id());
+    $this->assertNotNull($composite);
+    // Verify the amount of revisions of each entity.
+    $this->assertRevisionCount(2, 'entity_test_composite', $composite->id());
+    $this->assertRevisionCount(2, 'node', $node->id());
+    $this->assertRevisionCount(2, 'node', $second_node->id());
+    // Test that the composite entity is not deleted when its old parent is
+    // deleted.
+    $node->delete();
+    $composite = EntityTestCompositeRelationship::load($composite->id());
+    $this->assertNotNull($composite);
+
+    // Verify that the composite entity is not removed after running cron but
+    // the previous unused revision is deleted.
+    $this->cron->run();
+    $composite = EntityTestCompositeRelationship::load($composite->id());
+    $this->assertNotNull($composite);
+    $this->assertRevisionCount(1, 'entity_test_composite', $composite->id());
+  }
+
+  /**
+   * Tests the composite entity is not deleted when duplicating host entity.
+   *
+   * Includes revisions on the host entity.
+   */
+  public function testCompositeDeleteAfterDuplicatingParent() {
+    list($composite, $node) = $this->assignCompositeToNode();
+    $node->setNewRevision(TRUE);
+    $node->save();
+
+    // Create a duplicate of the node.
+    $duplicate_node = $node->createDuplicate();
+    $duplicate_node->save();
+    $duplicate_node->setNewRevision(TRUE);
+    $duplicate_node->save();
+
+    // Verify the amount of revisions of each entity.
+    $this->assertRevisionCount(3, 'entity_test_composite', $composite->id());
+    $this->assertRevisionCount(2, 'node', $node->id());
+    $this->assertRevisionCount(2, 'node', $duplicate_node->id());
+    // Test that the composite entity is not deleted when the duplicate is
+    // deleted.
+    $duplicate_node->delete();
+    $composite = EntityTestCompositeRelationship::load($composite->id());
+    $this->assertNotNull($composite);
+
+    $this->cron->run();
+    $composite = EntityTestCompositeRelationship::load($composite->id());
+    $this->assertNotNull($composite);
+  }
+
+  /**
+   * Asserts the revision count of a certain entity.
+   *
+   * @param int $expected
+   *   The expected count.
+   * @param string $entity_type_id
+   *   The entity type ID, e.g. node.
+   * @param int $entity_id
+   *   The entity ID.
+   */
+  protected function assertRevisionCount($expected, $entity_type_id, $entity_id) {
+    $id_field = \Drupal::entityTypeManager()
+      ->getDefinition($entity_type_id)
+      ->getKey('id');
+    $revision_count = \Drupal::entityQuery($entity_type_id)
+      ->condition($id_field, $entity_id)
+      ->allRevisions()
+      ->count()
+      ->execute();
+    $this->assertEquals($expected, $revision_count);
+  }
+
+  /**
+   * Creates and assigns the composite entity to a node.
+   *
+   * @param string $node_type
+   *   The node type.
+   *
+   * @return array
+   *   An array containing a composite and a node entity.
+   */
+  protected function assignCompositeToNode($node_type = 'article') {
+    $composite = EntityTestCompositeRelationship::create([
+      'uuid' => $this->randomMachineName(),
+      'name' => $this->randomMachineName(),
+    ]);
+    $composite->save();
+    $node = Node::create([
+      'title' => $this->randomMachineName(),
+      'type' => $node_type,
+      'composite_reference' => $composite,
+    ]);
+    $node->save();
+
+    return [$composite, $node];
   }
 
 }

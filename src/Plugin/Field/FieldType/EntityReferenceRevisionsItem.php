@@ -392,7 +392,10 @@ class EntityReferenceRevisionsItem extends EntityReferenceItem implements Option
     if ($this->entity && $this->entity->getEntityType()->get('entity_revision_parent_type_field') && $this->entity->getEntityType()->get('entity_revision_parent_id_field')) {
       // Only delete composite entities if the host field is not translatable.
       if (!$this->getFieldDefinition()->isTranslatable()) {
-        $this->entity->delete();
+        \Drupal::queue('entity_reference_revisions_orphan_purger')->createItem([
+          'entity_id' => $this->entity->id(),
+          'entity_type_id' => $this->entity->getEntityTypeId(),
+        ]);
       }
     }
   }
