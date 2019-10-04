@@ -157,10 +157,36 @@ class EntityReferenceRevisionsCompositeTest extends EntityKernelTestBase {
     $this->assertNotEqual('2nd revision', $node->getTitle(), 'Node did not keep changed title after reversion.');
     $this->assertNotEqual($original_composite_revision, $node->composite_reference[0]->target_revision_id, 'Composite entity got new revision when its host reverted to an old revision.');
 
-    // Test that removing/changing composite references results in translation
-    // changes.
+    $node_storage = $this->entityTypeManager->getStorage('node');
+    // Test that removing composite references results in translation changes.
     $node->set('composite_reference', []);
     $this->assertTrue($node->hasTranslationChanges());
+
+    // Test that changing composite reference results in translation changes.
+    $changed_composite_reference = $composite;
+    $changed_composite_reference->set('name', 'Changing composite reference');
+    $this->assertTrue($changed_composite_reference->isRevisionTranslationAffected());
+
+    $node->set('composite_reference', $changed_composite_reference);
+    $node->setNewRevision();
+    $this->assertTrue($node->hasTranslationChanges());
+    $node->save();
+    $nid = $node->id();
+    $node_storage->resetCache([$nid]);
+    /** @var \Drupal\node\NodeInterface $node */
+    $node = $node_storage->load($nid);
+
+    // Check the composite has changed.
+    $this->assertEquals('Changing composite reference', $node->get('composite_reference')->entity->getName());
+
+    // Make sure the node has 4 revisions.
+    $node_revisions_count = $node_storage->getQuery()->condition('nid', $nid)->allRevisions()->count()->execute();
+    $this->assertEqual($node_revisions_count, 4);
+
+    // Make sure the node has no revision with revision translation affected
+    // flag set to NULL.
+    $node_revisions_count = $node_storage->getQuery()->condition('nid', $nid)->allRevisions()->condition('revision_translation_affected', NULL, 'IS NULL')->count()->execute();
+    $this->assertEqual($node_revisions_count, 0, 'Node has a revision with revision translation affected set to NULL');
 
     // Revert the changes to avoid interfering with the delete test.
     $node->set('composite_reference', $composite);

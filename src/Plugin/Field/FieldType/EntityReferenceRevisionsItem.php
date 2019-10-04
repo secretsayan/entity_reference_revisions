@@ -282,6 +282,24 @@ class EntityReferenceRevisionsItem extends EntityReferenceItem implements Option
         }
       }
       if ($needs_save) {
+
+        // Because ContentEntityBase::hasTranslationChanges() does not check for
+        // EntityReferenceRevisionsFieldItemList::hasAffectingChanges() on field
+        // items that are not translatable, hidden on translation forms and not
+        // in the default translation, this has to be handled here by setting
+        // setRevisionTranslationAffected on host translations that holds a
+        // reference that has been changed.
+        if ($is_affected && $host instanceof TranslatableRevisionableInterface) {
+          $languages = $host->getTranslationLanguages();
+          foreach ($languages as $langcode => $language) {
+            $translation = $host->getTranslation($langcode);
+            if ($this->entity->hasTranslation($langcode) && $this->entity->getTranslation($langcode)->hasTranslationChanges() && $this->target_revision_id != $this->entity->getRevisionId()) {
+              $translation->setRevisionTranslationAffected(TRUE);
+              $translation->setRevisionTranslationAffectedEnforced(TRUE);
+            }
+          }
+        }
+
         $this->entity->save();
       }
     }
