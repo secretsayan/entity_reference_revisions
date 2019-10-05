@@ -98,7 +98,7 @@ class EntityReferenceRevisionsOrphanRemovalTest extends BrowserTestBase {
 
     // Run the delete process through the form.
     $this->runDeleteForm();
-    $this->assertSession()->pageTextContains('Test entity - composite relationship: Deleted 10 revisions (2 entities)');
+    $this->assertSession()->pageTextContains('Test entity - composite relationship: Deleted 8 revisions (1 entities)');
 
     $this->assertRevisionCount(1, 'entity_test_composite', $composite_entity_first->id());
     $this->assertRevisionCount(2, 'entity_test_composite', $composite_entity_second->id());
@@ -107,7 +107,7 @@ class EntityReferenceRevisionsOrphanRemovalTest extends BrowserTestBase {
     $this->assertRevisionCount(2, 'entity_test_composite', $composite_entity_fifth->id());
     $this->assertRevisionCount(1, 'entity_test_composite', $composite_entity_sixth->id());
     $this->assertRevisionCount(1, 'entity_test_composite', $composite_entity_seventh->id());
-    $this->assertRevisionCount(0, 'entity_test_composite', $composite_entity_eighth->id());
+    $this->assertRevisionCount(2, 'entity_test_composite', $composite_entity_eighth->id());
     $this->assertRevisionCount(1, 'entity_test_composite', $composite_entity_ninth->id());
   }
 
@@ -330,9 +330,6 @@ class EntityReferenceRevisionsOrphanRemovalTest extends BrowserTestBase {
       'title' => 'Second composite',
       'field_composite_entity' => $composite_entity_second,
     ]);
-    $node->save();
-    $node = $this->getNodeByTitle('Second composite');
-    $node->set('field_composite_entity', NULL);
     $node->save();
     $composite_entity_second = EntityTestCompositeRelationship::load($composite_entity_second->id());
     $composite_entity_second->setNewRevision(TRUE);
