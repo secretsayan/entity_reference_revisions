@@ -423,8 +423,8 @@ class EntityReferenceRevisionsItem extends EntityReferenceItem implements Option
    */
   public static function onDependencyRemoval(FieldDefinitionInterface $field_definition, array $dependencies) {
     $changed = FALSE;
-    $entity_manager = \Drupal::entityManager();
-    $target_entity_type = $entity_manager->getDefinition($field_definition->getFieldStorageDefinition()
+    $entity_type_manager = \Drupal::entityTypeManager();
+    $target_entity_type = $entity_type_manager->getDefinition($field_definition->getFieldStorageDefinition()
       ->getSetting('target_type'));
     $handler_settings = $field_definition->getSetting('handler_settings');
 
@@ -432,7 +432,7 @@ class EntityReferenceRevisionsItem extends EntityReferenceItem implements Option
     // has been removed.
     if (!empty($handler_settings['target_bundles'])) {
       if ($bundle_entity_type_id = $target_entity_type->getBundleEntityType()) {
-        if ($storage = $entity_manager->getStorage($bundle_entity_type_id)) {
+        if ($storage = $entity_type_manager->getStorage($bundle_entity_type_id)) {
           foreach ($storage->loadMultiple($handler_settings['target_bundles']) as $bundle) {
             if (isset($dependencies[$bundle->getConfigDependencyKey()][$bundle->getConfigDependencyName()])) {
               unset($handler_settings['target_bundles'][$bundle->id()]);

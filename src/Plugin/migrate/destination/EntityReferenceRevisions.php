@@ -2,7 +2,7 @@
 
 namespace Drupal\entity_reference_revisions\Plugin\migrate\destination;
 
-use Drupal\Component\Plugin\ConfigurablePluginInterface;
+use Drupal\Component\Plugin\ConfigurableInterface;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\TypedData\TranslatableInterface;
 use Drupal\migrate\MigrateException;
@@ -23,7 +23,7 @@ use Drupal\migrate\Row;
  *   deriver = "Drupal\entity_reference_revisions\Plugin\Derivative\MigrateEntityReferenceRevisions"
  * )
  */
-class EntityReferenceRevisions extends EntityRevision implements ConfigurablePluginInterface {
+class EntityReferenceRevisions extends EntityRevision implements ConfigurableInterface {
 
   /**
    * {@inheritdoc}
