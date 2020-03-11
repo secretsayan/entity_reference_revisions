@@ -44,7 +44,7 @@ class EntityReferenceRevisionsDestinationTest extends KernelTestBase implements 
     parent::setUp();
     $this->installEntitySchema('entity_test_composite');
     $this->installSchema('system', ['sequences']);
-    $this->installConfig($this->modules);
+    $this->installConfig(static::$modules);
 
     $this->migrationPluginManager = \Drupal::service('plugin.manager.migration');
   }
