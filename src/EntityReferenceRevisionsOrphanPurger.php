@@ -6,6 +6,7 @@ use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Datetime\DateFormatterInterface;
 use Drupal\Core\Entity\ContentEntityInterface;
+use Drupal\Core\Entity\EntityFieldManagerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Messenger\MessengerInterface;
 use Drupal\Core\Site\Settings;
@@ -39,6 +40,13 @@ class EntityReferenceRevisionsOrphanPurger {
    * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
   protected $entityTypeManager;
+
+  /**
+   * The entity field manager.
+   *
+   * @var \Drupal\Core\Entity\EntityFieldManagerInterface
+   */
+  protected $entityFieldManager;
 
   /**
    * The date formatter service.
@@ -80,6 +88,8 @@ class EntityReferenceRevisionsOrphanPurger {
    *
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
+   * @param \Drupal\Core\Entity\EntityFieldManagerInterface $entity_field_manager
+   *   The entity field manager.
    * @param \Drupal\Core\Datetime\DateFormatterInterface $date_formatter
    *   The date formatter service.
    * @param \Drupal\Component\Datetime\TimeInterface $time
@@ -89,8 +99,9 @@ class EntityReferenceRevisionsOrphanPurger {
    * @param \Drupal\Core\Messenger\MessengerInterface $messenger
    *   The messenger service.
    */
-  public function __construct(EntityTypeManagerInterface $entity_type_manager, DateFormatterInterface $date_formatter, TimeInterface $time, Connection $database, MessengerInterface $messenger) {
+  public function __construct(EntityTypeManagerInterface $entity_type_manager, EntityFieldManagerInterface $entity_field_manager, DateFormatterInterface $date_formatter, TimeInterface $time, Connection $database, MessengerInterface $messenger) {
     $this->entityTypeManager = $entity_type_manager;
+    $this->entityFieldManager = $entity_field_manager;
     $this->dateFormatter = $date_formatter;
     $this->time = $time;
     $this->database = $database;
@@ -349,18 +360,21 @@ class EntityReferenceRevisionsOrphanPurger {
     }
 
     $status = static::PARENT_VALID;
+
     // If the parent type does not exist anymore, the composite is not used.
     if (!$this->entityTypeManager->hasDefinition($parent_type)) {
       $status = static::PARENT_INVALID_DELETE;
     }
-    // Check if the parent field is valid.
-    elseif (!($parent_field_config = $this->entityTypeManager->getStorage('field_storage_config')->load("$parent_type.$parent_field_name"))) {
-      $status = static::PARENT_INVALID_DELETE;
-    }
-    // In case the parent field has no target revision ID key we can not be sure
-    // that this revision is not used anymore.
-    elseif (empty($parent_field_config->getSchema()['columns']['target_revision_id'])) {
-      $status = static::PARENT_INVALID_SKIP;
+    else {
+      $parent_field_definitions = $this->entityFieldManager->getFieldStorageDefinitions($parent_type);
+      if (!isset($parent_field_definitions[$parent_field_name])) {
+        $status = static::PARENT_INVALID_DELETE;
+      }
+      // In case the parent field has no target revision ID key we can not be
+      // sure that this revision is not used anymore.
+      elseif (empty($parent_field_definitions[$parent_field_name]->getSchema()['columns']['target_revision_id'])) {
+        $status = static::PARENT_INVALID_SKIP;
+      }
     }
     $this->validParents[$parent_type][$parent_field_name] = $status;
 
