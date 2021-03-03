@@ -149,10 +149,10 @@ class EntityReferenceRevisionsOrphanPurger {
    *
    * @param string $entity_type_id
    *   The entity type id, for example 'paragraph'.
-   * @param array $context
+   * @param Iterable|array $context
    *   The context array.
    */
-  public function deleteOrphansBatchOperation($entity_type_id, array &$context) {
+  public function deleteOrphansBatchOperation($entity_type_id, &$context) {
     $composite_type = $this->entityTypeManager->getDefinition($entity_type_id);
     $composite_revision_key = $composite_type->getKey('revision');
     /** @var \Drupal\Core\Entity\ContentEntityStorageInterface $composite_storage */
@@ -379,6 +379,26 @@ class EntityReferenceRevisionsOrphanPurger {
     $this->validParents[$parent_type][$parent_field_name] = $status;
 
     return $status;
+  }
+
+  /**
+   * Returns a list of composite entity types.
+   *
+   * @return \Drupal\Core\Entity\EntityTypeInterface[]
+   *   An array of composite entity types.
+   */
+  public function getCompositeEntityTypes() {
+    $composite_entity_types = [];
+    $entity_types = $this->entityTypeManager->getDefinitions();
+    foreach ($entity_types as $entity_type) {
+      $has_parent_type_field = $entity_type->get('entity_revision_parent_type_field');
+      $has_parent_id_field = $entity_type->get('entity_revision_parent_id_field');
+      $has_parent_field_name_field = $entity_type->get('entity_revision_parent_field_name_field');
+      if ($has_parent_type_field && $has_parent_id_field && $has_parent_field_name_field) {
+        $composite_entity_types[] = $entity_type;
+      }
+    }
+    return $composite_entity_types;
   }
 
 }
