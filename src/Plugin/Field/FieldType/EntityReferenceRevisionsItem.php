@@ -472,11 +472,6 @@ class EntityReferenceRevisionsItem extends EntityReferenceItem implements Option
     $selection_manager = \Drupal::service('plugin.manager.entity_reference_selection');
     $entity_manager = \Drupal::entityTypeManager();
 
-    // Bail if there are no referenceable entities.
-    if (!$selection_manager->getSelectionHandler($field_definition)->getReferenceableEntities()) {
-      return;
-    }
-
     // ERR field values are never cross referenced so we need to generate new
     // target entities. First, find the target entity type.
     $target_type_id = $field_definition->getFieldStorageDefinition()->getSetting('target_type');
