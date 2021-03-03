@@ -486,7 +486,14 @@ class EntityReferenceRevisionsItem extends EntityReferenceItem implements Option
     // Determine referenceable bundles.
     $bundle_manager = \Drupal::service('entity_type.bundle.info');
     if (isset($handler_settings['target_bundles']) && is_array($handler_settings['target_bundles'])) {
-      $bundles = $handler_settings['target_bundles'];
+      if (empty($handler_settings['negate'])) {
+        $bundles = $handler_settings['target_bundles'];
+      }
+      else {
+        $bundles = array_filter($bundle_manager->getBundleInfo($target_type_id), function ($bundle) use ($handler_settings) {
+          return !in_array($bundle, $handler_settings['target_bundles'], TRUE);
+        });
+      }
     }
     else {
       $bundles = $bundle_manager->getBundleInfo($target_type_id);
