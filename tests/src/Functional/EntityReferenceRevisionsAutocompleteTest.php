@@ -22,7 +22,7 @@ class EntityReferenceRevisionsAutocompleteTest extends BrowserTestBase {
    *
    * @var array
    */
-  public static $modules = array(
+  protected static $modules = array(
     'block_content',
     'node',
     'field',
@@ -38,7 +38,7 @@ class EntityReferenceRevisionsAutocompleteTest extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     // Create article content type.
     $this->drupalCreateContentType(array('type' => 'article', 'name' => 'Article'));

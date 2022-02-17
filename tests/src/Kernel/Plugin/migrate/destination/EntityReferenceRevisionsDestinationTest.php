@@ -28,7 +28,7 @@ class EntityReferenceRevisionsDestinationTest extends KernelTestBase implements 
   /**
    * {@inheritdoc}
    */
-  public static $modules = [
+  protected static $modules = [
     'migrate',
     'entity_reference_revisions',
     'entity_composite_relationship_test',
@@ -40,7 +40,7 @@ class EntityReferenceRevisionsDestinationTest extends KernelTestBase implements 
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     $this->installEntitySchema('entity_test_composite');
     $this->installSchema('system', ['sequences']);

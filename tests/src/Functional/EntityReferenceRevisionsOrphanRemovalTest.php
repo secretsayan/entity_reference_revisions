@@ -28,7 +28,7 @@ class EntityReferenceRevisionsOrphanRemovalTest extends BrowserTestBase {
    *
    * @var array
    */
-  public static $modules = [
+  protected static $modules = [
     'node',
     'field',
     'entity_reference_revisions',
@@ -43,7 +43,7 @@ class EntityReferenceRevisionsOrphanRemovalTest extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
     $this->adminUser = $this->drupalCreateUser([
       'delete orphan revisions',

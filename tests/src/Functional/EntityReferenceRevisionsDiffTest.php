@@ -21,7 +21,7 @@ class EntityReferenceRevisionsDiffTest extends BrowserTestBase {
    *
    * @var array
    */
-  public static $modules = [
+  protected static $modules = [
     'block_content',
     'node',
     'field',
@@ -38,7 +38,7 @@ class EntityReferenceRevisionsDiffTest extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     // Create article content type.
     $this->drupalCreateContentType(['type' => 'article', 'name' => 'Article']);

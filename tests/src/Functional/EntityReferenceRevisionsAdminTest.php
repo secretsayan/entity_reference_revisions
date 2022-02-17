@@ -20,7 +20,7 @@ class EntityReferenceRevisionsAdminTest extends BrowserTestBase {
    *
    * @var array
    */
-  public static $modules = array(
+  protected static $modules = array(
     'node',
     'field',
     'entity_reference_revisions',
@@ -36,7 +36,7 @@ class EntityReferenceRevisionsAdminTest extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
     // Create paragraphs and article content types.
     $this->drupalCreateContentType(array('type' => 'entity_revisions', 'name' => 'Entity revisions'));

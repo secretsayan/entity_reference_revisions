@@ -29,7 +29,7 @@ class EntityReferenceRevisionsCompositeTranslationTest extends EntityKernelTestB
    *
    * @var array
    */
-  public static $modules = [
+  protected static $modules = [
     'node',
     'field',
     'entity_reference_revisions',
@@ -56,7 +56,7 @@ class EntityReferenceRevisionsCompositeTranslationTest extends EntityKernelTestB
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     ConfigurableLanguage::createFromLangcode('de')->save();

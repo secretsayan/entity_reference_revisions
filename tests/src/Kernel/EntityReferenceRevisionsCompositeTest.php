@@ -27,7 +27,7 @@ class EntityReferenceRevisionsCompositeTest extends EntityKernelTestBase {
    *
    * @var array
    */
-  public static $modules = array(
+  protected static $modules = array(
     'node',
     'field',
     'entity_reference_revisions',
@@ -60,7 +60,7 @@ class EntityReferenceRevisionsCompositeTest extends EntityKernelTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
     parent::setUp();
 
     $this->installEntitySchema('entity_test_composite');
