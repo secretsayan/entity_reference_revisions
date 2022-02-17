@@ -181,12 +181,12 @@ class EntityReferenceRevisionsCompositeTest extends EntityKernelTestBase {
 
     // Make sure the node has 4 revisions.
     $node_revisions_count = $node_storage->getQuery()->condition('nid', $nid)->allRevisions()->count()->execute();
-    $this->assertEqual($node_revisions_count, 4);
+    $this->assertEquals(4, $node_revisions_count);
 
     // Make sure the node has no revision with revision translation affected
     // flag set to NULL.
     $node_revisions_count = $node_storage->getQuery()->condition('nid', $nid)->allRevisions()->condition('revision_translation_affected', NULL, 'IS NULL')->count()->execute();
-    $this->assertEqual($node_revisions_count, 0, 'Node has a revision with revision translation affected set to NULL');
+    $this->assertEquals(0, $node_revisions_count, 'Node has a revision with revision translation affected set to NULL');
 
     // Revert the changes to avoid interfering with the delete test.
     $node->set('composite_reference', $composite);

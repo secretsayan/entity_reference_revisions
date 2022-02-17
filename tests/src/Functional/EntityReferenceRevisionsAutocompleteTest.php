@@ -99,8 +99,8 @@ class EntityReferenceRevisionsAutocompleteTest extends BrowserTestBase {
     );
     $this->drupalGet('node/add/article');
     $this->submitForm($edit, 'Save');
-    $this->assertText($title);
-    $this->assertText(Html::escape($block_content));
+    $this->assertSession()->pageTextContains($title);
+    $this->assertSession()->responseContains(Html::escape($block_content));
 
     // Check if the block content is not deleted since there is no composite
     // relationship.
@@ -148,7 +148,7 @@ class EntityReferenceRevisionsAutocompleteTest extends BrowserTestBase {
     );
     $this->drupalGet('admin/structure/block/block-content/types/add');
     $this->submitForm($edit, 'Save');
-    $this->assertText($label);
+    $this->assertSession()->pageTextContains($label);
   }
 
 }
