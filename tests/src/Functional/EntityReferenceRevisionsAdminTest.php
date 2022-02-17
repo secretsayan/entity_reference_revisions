@@ -47,6 +47,7 @@ class EntityReferenceRevisionsAdminTest extends BrowserTestBase {
       'administer site configuration',
       'administer nodes',
       'create article content',
+      'create entity_revisions content',
       'administer content types',
       'administer node fields',
       'administer node display',

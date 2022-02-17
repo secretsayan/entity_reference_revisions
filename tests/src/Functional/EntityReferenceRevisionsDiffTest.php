@@ -57,6 +57,7 @@ class EntityReferenceRevisionsDiffTest extends BrowserTestBase {
       'administer node form display',
       'view all revisions',
       'edit any article content',
+      'create article content',
     ]);
     $this->drupalLogin($admin_user);
     $this->drupalPlaceBlock('system_breadcrumb_block');
