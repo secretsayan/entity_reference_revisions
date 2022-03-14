@@ -344,6 +344,7 @@ class EntityReferenceRevisionsCompositeTranslatableFieldTest extends EntityKerne
       ->condition($id_field, $entity_id)
       ->allRevisions()
       ->count()
+      ->accessCheck(TRUE)
       ->execute();
     $this->assertEquals($expected, $revision_count);
   }

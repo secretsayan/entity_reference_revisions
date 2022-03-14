@@ -616,6 +616,7 @@ class EntityReferenceRevisionsCompositeTranslationTest extends EntityKernelTestB
       ->condition($entity_type->getKey('revision_translation_affected'), 1)
       ->allRevisions()
       ->count()
+      ->accessCheck(TRUE)
       ->execute();
 
     $this->assertEquals($expected, $affected_revisions_count);
@@ -634,6 +635,7 @@ class EntityReferenceRevisionsCompositeTranslationTest extends EntityKernelTestB
       ->condition($entity->getEntityType()->getKey('id'), $entity->id())
       ->allRevisions()
       ->count()
+      ->accessCheck(TRUE)
       ->execute();
     $this->assertEquals($expected, $node_revisions_count);
   }

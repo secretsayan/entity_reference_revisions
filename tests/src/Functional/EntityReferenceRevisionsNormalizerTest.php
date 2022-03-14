@@ -10,6 +10,7 @@ use Drupal\Tests\field_ui\Traits\FieldUiTestTrait;
  * Tests the entity_reference_revisions configuration.
  *
  * @group entity_reference_revisions
+ * @requires module hal
  */
 class EntityReferenceRevisionsNormalizerTest extends BrowserTestBase {
 
@@ -52,6 +53,11 @@ class EntityReferenceRevisionsNormalizerTest extends BrowserTestBase {
    * Tests the entity reference revisions configuration.
    */
   public function testEntityReferenceRevisions() {
+
+    if (version_compare(\Drupal::VERSION, '10', '>=')) {
+      $this->markTestSkipped('HAL support has been moved to hal module');
+    }
+
     $admin_user = $this->drupalCreateUser(array(
       'administer site configuration',
       'administer nodes',

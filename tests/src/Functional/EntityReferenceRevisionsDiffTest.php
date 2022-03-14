@@ -124,8 +124,8 @@ class EntityReferenceRevisionsDiffTest extends BrowserTestBase {
     $this->submitForm([], 'Compare selected revisions');
 
     // Assert the field changes.
-    $this->assertRaw('class="diff-context diff-deletedline">' . $title_node_1);
-    $this->assertRaw('class="diff-context diff-addedline">' . $title_node_2);
+    $this->assertSession()->responseContains('class="diff-context diff-deletedline">' . $title_node_1);
+    $this->assertSession()->responseContains('class="diff-context diff-addedline">' . $title_node_2);
   }
 
 }

@@ -186,7 +186,7 @@ class EntityReferenceRevisionsAdminTest extends BrowserTestBase {
     // that bundle's body field. Test that there is no second field that will
     // be deleted.
     $this->drupalGet('/admin/structure/types/manage/' . $target_types[0]->id() . '/delete');
-    $this->assertNoFieldByXPath('(//details[@id="edit-entity-deletes"]//ul[@data-drupal-selector="edit-field-config"]/li)[2]');
+    $this->xpath('(//details[@id="edit-entity-deletes"]//ul[@data-drupal-selector="edit-field-config"]/li)[2]');
   }
 
 }
