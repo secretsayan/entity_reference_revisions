@@ -8,5 +8,12 @@
   },
   "require-dev": {
     "drupal/diff": "1.x-dev"
+  },
+  "extra": {
+    "drush": {
+      "services": {
+        "drush.services.yml": "^9 || ^10 || ^11"
+      }
+    }
   }
 }
