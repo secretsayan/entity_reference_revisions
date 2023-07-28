@@ -1,0 +1,5 @@
+services:
+  entity_policy_override_test.EntityTestPolicyOverride:
+    class: Drupal\entity_policy_override_test\EntityTestPolicyOverride
+    tags:
+      - { name: entity_reference_revisions_revision_creation_policy, priority: -100 }

@@ -1,0 +1,494 @@
+diff --git a/Allow-composite-entities-to-opt-out-of-creating-duplicate-revisions-3267490-6.patch b/Allow-composite-entities-to-opt-out-of-creating-duplicate-revisions-3267490-6.patch
+new file mode 100644
+index 0000000..e69de29
+diff --git a/entity_reference_revisions.services.yml b/entity_reference_revisions.services.yml
+index d72705c..899ca88 100755
+--- a/entity_reference_revisions.services.yml
++++ b/entity_reference_revisions.services.yml
+@@ -2,3 +2,16 @@ services:
+   entity_reference_revisions.orphan_purger:
+     class: Drupal\entity_reference_revisions\EntityReferenceRevisionsOrphanPurger
+     arguments: ['@entity_type.manager', '@entity_field.manager', '@date.formatter', '@datetime.time', '@database', '@messenger']
++  entity_reference_revisions.revision_creation_policy:
++    class: Drupal\entity_reference_revisions\RevisionCreationPolicy\ChainRevisionCreationPolicy
++    tags:
++      - { name: service_collector, tag: entity_reference_revisions_revision_creation_policy, call: policyManager}
++  Drupal\entity_reference_revisions\RevisionCreationPolicy\RevisionCreationPolicyInterface: '@entity_reference_revisions.revision_creation_policy'
++  entity_reference_revisions.CompositeEntityReferencedByNewHostRevisionWithTranslationChanges:
++    class: Drupal\entity_reference_revisions\RevisionCreationPolicy\CompositeEntityReferencedByNewHostRevisionWithTranslationChanges
++    tags:
++      - { name: entity_reference_revisions_revision_creation_policy}
++  entity_reference_revisions.CompositeEntityReferencedByNewHostRevisionViaUntranslatableReference:
++    class: Drupal\entity_reference_revisions\RevisionCreationPolicy\CompositeEntityReferencedByNewHostRevisionViaUntranslatableReference
++    tags:
++      - { name: entity_reference_revisions_revision_creation_policy}
+diff --git a/src/Plugin/Field/FieldType/EntityReferenceRevisionsItem.php b/src/Plugin/Field/FieldType/EntityReferenceRevisionsItem.php
+index 4a313ea..e7a2f77 100644
+--- a/src/Plugin/Field/FieldType/EntityReferenceRevisionsItem.php
++++ b/src/Plugin/Field/FieldType/EntityReferenceRevisionsItem.php
+@@ -270,16 +270,26 @@ class EntityReferenceRevisionsItem extends EntityReferenceItem implements Option
+       // change on the unaffected translations. In turn, the host entity is not
+       // marked as affected for these translations.
+       $is_affected = !$this->getFieldDefinition()->isTranslatable() || ($host instanceof TranslatableRevisionableInterface && $host->hasTranslationChanges());
+-      if ($is_affected && !$host->isNew() && $this->entity && $this->entity->getEntityType()->get('entity_revision_parent_id_field')) {
+-        if ($host->isNewRevision()) {
+-          $this->entity->setNewRevision();
+-          $needs_save = TRUE;
+-        }
+-        // Additionally ensure that the default revision state is kept in sync.
+-        if ($this->entity && $host->isDefaultRevision() != $this->entity->isDefaultRevision()) {
+-          $this->entity->isDefaultRevision($host->isDefaultRevision());
+-          $needs_save = TRUE;
+-        }
++//      if ($is_affected && !$host->isNew() && $this->entity && $this->entity->getEntityType()->get('entity_revision_parent_id_field')) {
++//        if ($host->isNewRevision()) {
++//          $this->entity->setNewRevision();
++//          $needs_save = TRUE;
++//        }
++//        // Additionally ensure that the default revision state is kept in sync.
++//        if ($this->entity && $host->isDefaultRevision() != $this->entity->isDefaultRevision()) {
++//          $this->entity->isDefaultRevision($host->isDefaultRevision());
++//          $needs_save = TRUE;
++//        }
++//      }
++      if (\Drupal::service('entity_reference_revisions.revision_creation_policy')->shouldCreateNewRevision($this)) {
++        $this->entity->setNewRevision();
++        $needs_save = TRUE;
++      }
++
++      // Additionally ensure that the default revision state is kept in sync.
++      if ($this->entity && $host->isDefaultRevision() != $this->entity->isDefaultRevision() && $is_affected) {
++        $this->entity->isDefaultRevision($host->isDefaultRevision());
++        $needs_save = TRUE;
+       }
+       if ($needs_save) {
+ 
+diff --git a/src/RevisionCreationPolicy/ChainRevisionCreationPolicy.php b/src/RevisionCreationPolicy/ChainRevisionCreationPolicy.php
+new file mode 100644
+index 0000000..b86762f
+--- /dev/null
++++ b/src/RevisionCreationPolicy/ChainRevisionCreationPolicy.php
+@@ -0,0 +1,83 @@
++<?php
++
++namespace Drupal\entity_reference_revisions\RevisionCreationPolicy;
++
++use Drupal\entity_reference_revisions\RevisionCreationPolicy\ChainRevisionCreationPolicyInterface;
++use Drupal\entity_reference_revisions\Plugin\Field\FieldType\EntityReferenceRevisionsItem;
++use Drupal\entity_reference_revisions\RevisionCreationPolicy\RevisionCreationPolicyInterface;
++
++class ChainRevisionCreationPolicy implements ChainRevisionCreationPolicyInterface {
++
++  /**
++   * A list of policy rules to apply when this policy is checked.
++   *
++   * @var \Drupal\entity_reference_revisions\RevisionCreationPolicy\RevisionCreationPolicyInterface[]
++   */
++  protected array $rules = [];
++
++  /**
++   * @param \Drupal\entity_reference_revisions\RevisionCreationPolicy\RevisionCreationPolicyInterface $policy
++   *
++   * @return $this
++   */
++  public function addPolicy(RevisionCreationPolicyInterface $policy) {
++    $this->rules[] = $policy;
++    return $this;
++  }
++
++  public function initializer(RevisionCreationPolicyInterface $policy) {
++    $policy->initializer($this);
++  }
++
++  public function policyManager(RevisionCreationPolicyInterface $policy) {
++    return $this->initializer($policy);
++  }
++
++  /**
++   * @param \Drupal\entity_reference_revisions\RevisionCreationPolicy\RevisionCreationPolicyInterface $policy
++   *
++   * @return $this
++   */
++  public function removePolicy(RevisionCreationPolicyInterface $policy) {
++    if (($key = array_search($policy, $this->rules)) !== FALSE) {
++      unset($this->rules[$key]);
++    }
++    return $this;
++  }
++
++  /**
++   * @return $this
++   */
++  public function removeAllPolicies() {
++    $this->rules = [];
++    return $this;
++  }
++
++  /**
++   * @param \Drupal\entity_reference_revisions\RevisionCreationPolicy\RevisionCreationPolicyInterface $remove_policy
++   * @param \Drupal\entity_reference_revisions\RevisionCreationPolicy\RevisionCreationPolicyInterface $add_policy
++   *
++   * @return $this
++   */
++  public function swapPolicies(RevisionCreationPolicyInterface $remove_policy, RevisionCreationPolicyInterface $add_policy) {
++    $this->addPolicy($add_policy);
++    $this->removePolicy($remove_policy);
++    return $this;
++  }
++
++  /**
++   * @param \Drupal\entity_reference_revisions\Plugin\Field\FieldType\EntityReferenceRevisionsItem $item
++   *
++   * @return bool
++   */
++  public function shouldCreateNewRevision(EntityReferenceRevisionsItem $item) {
++    foreach ($this->rules as $rule) {
++      $result = $rule->shouldCreateNewRevision($item);
++      if ($result === TRUE) {
++        return $result;
++      }
++    }
++    return FALSE;
++  }
++
++}
+diff --git a/src/RevisionCreationPolicy/ChainRevisionCreationPolicyInterface.php b/src/RevisionCreationPolicy/ChainRevisionCreationPolicyInterface.php
+new file mode 100644
+index 0000000..764d29f
+--- /dev/null
++++ b/src/RevisionCreationPolicy/ChainRevisionCreationPolicyInterface.php
+@@ -0,0 +1,15 @@
++<?php
++
++namespace Drupal\entity_reference_revisions\RevisionCreationPolicy;
++
++interface ChainRevisionCreationPolicyInterface extends RevisionCreationPolicyInterface {
++
++  public function addPolicy(RevisionCreationPolicyInterface $policy);
++
++  public function removePolicy(RevisionCreationPolicyInterface $policy);
++
++  public function removeAllPolicies();
++
++  public function swapPolicies(RevisionCreationPolicyInterface $remove_policy, RevisionCreationPolicyInterface $add_policy);
++
++}
+diff --git a/src/RevisionCreationPolicy/CompositeEntityReferencedByNewHostRevisionViaUntranslatableReference.php b/src/RevisionCreationPolicy/CompositeEntityReferencedByNewHostRevisionViaUntranslatableReference.php
+new file mode 100644
+index 0000000..e491b11
+--- /dev/null
++++ b/src/RevisionCreationPolicy/CompositeEntityReferencedByNewHostRevisionViaUntranslatableReference.php
+@@ -0,0 +1,32 @@
++<?php
++
++namespace Drupal\entity_reference_revisions\RevisionCreationPolicy;
++
++use Drupal\entity_reference_revisions\Plugin\Field\FieldType\EntityReferenceRevisionsItem;
++use Drupal\entity_reference_revisions\RevisionCreationPolicy\RevisionCreationPolicyInterface;
++
++class CompositeEntityReferencedByNewHostRevisionViaUntranslatableReference implements RevisionCreationPolicyInterface {
++
++  public function initializer(RevisionCreationPolicyInterface $chain) {
++    $chain->addPolicy($this);
++    return $chain;
++  }
++
++  public function shouldCreateNewRevision(EntityReferenceRevisionsItem $item) {
++    $host = $item->getEntity();
++    if (
++      // A composite entity
++      $item->entity && $item->entity->getEntityType()
++        ->get('entity_revision_parent_id_field') &&
++
++      // Referenced by a new host revision
++      !$host->isNew() && $host->isNewRevision() &&
++
++      // Via an untranslatable reference
++      !$item->getFieldDefinition()->isTranslatable()
++    ) {
++      return TRUE;
++    }
++  }
++
++}
+diff --git a/src/RevisionCreationPolicy/CompositeEntityReferencedByNewHostRevisionWithTranslationChanges.php b/src/RevisionCreationPolicy/CompositeEntityReferencedByNewHostRevisionWithTranslationChanges.php
+new file mode 100644
+index 0000000..2dd1458
+--- /dev/null
++++ b/src/RevisionCreationPolicy/CompositeEntityReferencedByNewHostRevisionWithTranslationChanges.php
+@@ -0,0 +1,32 @@
++<?php
++
++namespace Drupal\entity_reference_revisions\RevisionCreationPolicy;
++
++use Drupal\Core\Entity\TranslatableRevisionableInterface;
++use Drupal\entity_reference_revisions\Plugin\Field\FieldType\EntityReferenceRevisionsItem;
++
++class CompositeEntityReferencedByNewHostRevisionWithTranslationChanges implements RevisionCreationPolicyInterface {
++
++  public function initializer(RevisionCreationPolicyInterface $chain) {
++    $chain->addPolicy($this);
++    return $chain;
++  }
++
++  public function shouldCreateNewRevision(EntityReferenceRevisionsItem $item) {
++    $host = $item->getEntity();
++    if (
++      // A composite entity
++      $item->entity && $item->entity->getEntityType()
++        ->get('entity_revision_parent_id_field') &&
++
++      // Referenced by a new host revision
++      !$host->isNew() && $host->isNewRevision() &&
++
++      // With translation changes
++      $host instanceof TranslatableRevisionableInterface && $host->hasTranslationChanges()
++    ) {
++      return TRUE;
++    }
++  }
++
++}
+diff --git a/src/RevisionCreationPolicy/RevisionCreationPolicyInterface.php b/src/RevisionCreationPolicy/RevisionCreationPolicyInterface.php
+new file mode 100644
+index 0000000..14f71a5
+--- /dev/null
++++ b/src/RevisionCreationPolicy/RevisionCreationPolicyInterface.php
+@@ -0,0 +1,13 @@
++<?php
++
++namespace Drupal\entity_reference_revisions\RevisionCreationPolicy;
++
++use Drupal\entity_reference_revisions\Plugin\Field\FieldType\EntityReferenceRevisionsItem;
++
++interface RevisionCreationPolicyInterface {
++
++  public function initializer(RevisionCreationPolicyInterface $policy);
++
++  public function shouldCreateNewRevision(EntityReferenceRevisionsItem $item);
++
++}
+diff --git a/tests/modules/entity_policy_override_test/entity_policy_override_test.info.yml b/tests/modules/entity_policy_override_test/entity_policy_override_test.info.yml
+new file mode 100644
+index 0000000..3bd1f5c
+--- /dev/null
++++ b/tests/modules/entity_policy_override_test/entity_policy_override_test.info.yml
+@@ -0,0 +1,8 @@
++name: 'Entity policy override test'
++type: module
++package: testing
++core_version_requirement: ^9 || ^10
++
++dependencies:
++  - entity_composite_relationship_test:entity_composite_relationship_test
++  - entity_reference_revisions:entity_reference_revisions
+diff --git a/tests/modules/entity_policy_override_test/entity_policy_override_test.services.yml b/tests/modules/entity_policy_override_test/entity_policy_override_test.services.yml
+new file mode 100644
+index 0000000..2947067
+--- /dev/null
++++ b/tests/modules/entity_policy_override_test/entity_policy_override_test.services.yml
+@@ -0,0 +1,5 @@
++services:
++  entity_policy_override_test.EntityTestPolicyOverride:
++    class: Drupal\entity_policy_override_test\EntityTestPolicyOverride
++    tags:
++      - { name: entity_reference_revisions_revision_creation_policy, priority: -100 }
+diff --git a/tests/modules/entity_policy_override_test/src/EntityTestPolicyOverride.php b/tests/modules/entity_policy_override_test/src/EntityTestPolicyOverride.php
+new file mode 100644
+index 0000000..e728e6b
+--- /dev/null
++++ b/tests/modules/entity_policy_override_test/src/EntityTestPolicyOverride.php
+@@ -0,0 +1,22 @@
++<?php
++
++namespace Drupal\entity_policy_override_test;
++
++use Drupal\entity_reference_revisions\Plugin\Field\FieldType\EntityReferenceRevisionsItem;
++use Drupal\entity_reference_revisions\RevisionCreationPolicy\ChainRevisionCreationPolicy;
++use Drupal\entity_reference_revisions\RevisionCreationPolicy\RevisionCreationPolicyInterface;
++
++class EntityTestPolicyOverride implements RevisionCreationPolicyInterface {
++
++  public function initializer(RevisionCreationPolicyInterface $chain) {
++    $chain->removeAllPolicies();
++    $chain->addPolicy($this);
++
++    return $chain;
++  }
++
++  public function shouldCreateNewRevision(EntityReferenceRevisionsItem $item) {
++    return FALSE;
++  }
++
++}
+diff --git a/tests/src/Kernel/EntityReferenceRevisionsPolicyOverrideTest.php b/tests/src/Kernel/EntityReferenceRevisionsPolicyOverrideTest.php
+new file mode 100644
+index 0000000..6be39fe
+--- /dev/null
++++ b/tests/src/Kernel/EntityReferenceRevisionsPolicyOverrideTest.php
+@@ -0,0 +1,165 @@
++<?php
++
++namespace Drupal\Tests\entity_reference_revisions\Kernel;
++
++use Drupal\entity_composite_relationship_test\Entity\EntityTestCompositeRelationship;
++use Drupal\field\Entity\FieldConfig;
++use Drupal\field\Entity\FieldStorageConfig;
++use Drupal\KernelTests\Core\Entity\EntityKernelTestBase;
++use Drupal\node\Entity\Node;
++use Drupal\node\Entity\NodeType;
++use Drupal\Tests\node\Traits\ContentTypeCreationTrait;
++use Drupal\Tests\node\Traits\NodeCreationTrait;
++
++/**
++ * Tests the entity_reference_revisions ChainRevisionCreationPolicy.
++ *
++ * @group entity_reference_revisions
++ */
++class EntityReferenceRevisionsPolicyOverrideTest extends EntityKernelTestBase {
++
++  use ContentTypeCreationTrait;
++  use NodeCreationTrait;
++
++  /**
++   * Modules to enable.
++   *
++   * @var array
++   */
++  protected static $modules = [
++    'node',
++    'user',
++    'system',
++    'field',
++    'entity_reference_revisions',
++    'entity_composite_relationship_test',
++    'entity_policy_override_test',
++  ];
++
++  /**
++   * The current database connection.
++   *
++   * @var \Drupal\Core\Database\Connection
++   */
++  protected $database;
++
++  /**
++   * The entity type manager.
++   *
++   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
++   *
++   */
++  protected $entityTypeManager;
++
++  /**
++   * {@inheritdoc}
++   */
++  protected function setUp(): void {
++    parent::setUp();
++
++    $this->installEntitySchema('entity_test_composite');
++    $this->installSchema('node', ['node_access']);
++
++    // Create article content type.
++    NodeType::create(['type' => 'article', 'name' => 'Article'])->save();
++
++    // Create the reference to the composite entity test.
++    $field_storage = FieldStorageConfig::create([
++      'field_name' => 'composite_reference',
++      'entity_type' => 'node',
++      'type' => 'entity_reference_revisions',
++      'settings' => [
++        'target_type' => 'entity_test_composite',
++      ],
++    ]);
++    $field_storage->save();
++    $field = FieldConfig::create([
++      'field_storage' => $field_storage,
++      'bundle' => 'article',
++      'translatable' => FALSE,
++    ]);
++    $field->save();
++
++    // Inject database connection, entity type manager and cron for the tests.
++    $this->database = \Drupal::database();
++    $this->entityTypeManager = \Drupal::entityTypeManager();
++    $this->cron = \Drupal::service('cron');
++  }
++
++  /**
++   * Tests entity_reference_revisions policies can be overridden.
++   */
++  public function testEntityReferenceRevisionsPolicyOverrideNoUpdate() {
++    // Create the test composite entity.
++    $composite = EntityTestCompositeRelationship::create([
++      'uuid' => $this->randomMachineName(),
++      'name' => $this->randomMachineName(),
++    ]);
++    $composite->save();
++
++    // Assert that there is only 1 revision of the composite entity.
++    $composite_revisions_count = \Drupal::entityQuery('entity_test_composite')
++      ->condition('uuid', $composite->uuid())
++      ->allRevisions()
++      ->count()
++      ->accessCheck(TRUE)
++      ->execute();
++    $this->assertEquals(1, $composite_revisions_count);
++
++    // Create a node with a reference to the test composite entity.
++    /** @var \Drupal\node\NodeInterface $node */
++    $node = Node::create([
++      'title' => $this->randomMachineName(),
++      'type' => 'article',
++    ]);
++    $node->save();
++    $node->set('composite_reference', $composite);
++    $this->assertTrue($node->hasTranslationChanges());
++    $node->save();
++
++    // Assert that there is only 1 revision when creating a node.
++    $node_revisions_count = \Drupal::entityQuery('node')
++      ->condition('nid', $node->id())
++      ->allRevisions()
++      ->count()
++      ->accessCheck(TRUE)
++      ->execute();
++    $this->assertEquals(1, $node_revisions_count);
++    // Assert there is no new composite revision after creating a host entity.
++    $composite_revisions_count = \Drupal::entityQuery('entity_test_composite')
++      ->condition('uuid', $composite->uuid())
++      ->allRevisions()
++      ->count()
++      ->accessCheck(TRUE)
++      ->execute();
++    $this->assertEquals(1, $composite_revisions_count);
++
++    // Verify the value of parent type and id after create a node.
++    $composite = EntityTestCompositeRelationship::load($composite->id());
++    $this->assertEquals($node->getEntityTypeId(), $composite->parent_type->value);
++    $this->assertEquals($node->id(), $composite->parent_id->value);
++    $this->assertEquals('composite_reference', $composite->parent_field_name->value);
++    // Create second revision of the node.
++    $original_composite_revision = $node->composite_reference[0]->target_revision_id;
++    $original_node_revision = $node->getRevisionId();
++    $node->setTitle('2nd revision');
++    $node->setNewRevision();
++    $node->save();
++    $node = Node::load($node->id());
++    // Check the revision of the node.
++    $this->assertEquals('2nd revision', $node->getTitle(), 'New node revision has changed data.');
++    //Check composite entity revisions
++    $this->assertEquals($original_composite_revision, $node->composite_reference[0]->target_revision_id, 'Composite entity got no new revision when its host did.');
++
++    // Make sure that there are only 1 revision for the composite entity
++    $node_revisions_count = \Drupal::entityQuery('entity_test_composite')
++      ->condition('uuid', $composite->uuid())
++      ->allRevisions()
++      ->count()
++      ->accessCheck(TRUE)
++      ->execute();
++    $this->assertEquals(1, $node_revisions_count);
++  }
++
++}
++

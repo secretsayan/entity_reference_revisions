@@ -2,3 +2,16 @@ services:
   entity_reference_revisions.orphan_purger:
     class: Drupal\entity_reference_revisions\EntityReferenceRevisionsOrphanPurger
     arguments: ['@entity_type.manager', '@entity_field.manager', '@date.formatter', '@datetime.time', '@database', '@messenger']
+  entity_reference_revisions.revision_creation_policy:
+    class: Drupal\entity_reference_revisions\RevisionCreationPolicy\ChainRevisionCreationPolicy
+    tags:
+      - { name: service_collector, tag: entity_reference_revisions_revision_creation_policy, call: policyManager}
+  Drupal\entity_reference_revisions\RevisionCreationPolicy\RevisionCreationPolicyInterface: '@entity_reference_revisions.revision_creation_policy'
+  entity_reference_revisions.CompositeEntityReferencedByNewHostRevisionWithTranslationChanges:
+    class: Drupal\entity_reference_revisions\RevisionCreationPolicy\CompositeEntityReferencedByNewHostRevisionWithTranslationChanges
+    tags:
+      - { name: entity_reference_revisions_revision_creation_policy}
+  entity_reference_revisions.CompositeEntityReferencedByNewHostRevisionViaUntranslatableReference:
+    class: Drupal\entity_reference_revisions\RevisionCreationPolicy\CompositeEntityReferencedByNewHostRevisionViaUntranslatableReference
+    tags:
+      - { name: entity_reference_revisions_revision_creation_policy}
