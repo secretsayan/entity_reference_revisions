@@ -54,23 +54,12 @@ class ChainRevisionCreationPolicy implements ChainRevisionCreationPolicyInterfac
   }
 
   /**
-   * @param \Drupal\entity_reference_revisions\RevisionCreationPolicy\RevisionCreationPolicyInterface $remove_policy
-   * @param \Drupal\entity_reference_revisions\RevisionCreationPolicy\RevisionCreationPolicyInterface $add_policy
-   *
-   * @return $this
-   */
-  public function swapPolicies(RevisionCreationPolicyInterface $remove_policy, RevisionCreationPolicyInterface $add_policy) {
-    $this->addPolicy($add_policy);
-    $this->removePolicy($remove_policy);
-    return $this;
-  }
-
-  /**
    * @param \Drupal\entity_reference_revisions\Plugin\Field\FieldType\EntityReferenceRevisionsItem $item
    *
    * @return bool
    */
   public function shouldCreateNewRevision(EntityReferenceRevisionsItem $item) {
+
     foreach ($this->rules as $rule) {
       $result = $rule->shouldCreateNewRevision($item);
       if ($result === TRUE) {

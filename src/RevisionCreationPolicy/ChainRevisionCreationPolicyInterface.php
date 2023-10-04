@@ -10,6 +10,4 @@ interface ChainRevisionCreationPolicyInterface extends RevisionCreationPolicyInt
 
   public function removeAllPolicies();
 
-  public function swapPolicies(RevisionCreationPolicyInterface $remove_policy, RevisionCreationPolicyInterface $add_policy);
-
 }
