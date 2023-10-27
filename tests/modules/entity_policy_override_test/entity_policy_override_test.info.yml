@@ -1,0 +1,8 @@
+name: 'Entity policy override test'
+type: module
+package: testing
+core_version_requirement: ^9 || ^10
+
+dependencies:
+  - entity_composite_relationship_test:entity_composite_relationship_test
+  - entity_reference_revisions:entity_reference_revisions
