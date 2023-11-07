@@ -1,6 +1,3 @@
-diff --git a/Allow-composite-entities-to-opt-out-of-creating-duplicate-revisions-3267490-6.patch b/Allow-composite-entities-to-opt-out-of-creating-duplicate-revisions-3267490-6.patch
-new file mode 100644
-index 0000000..e69de29
 diff --git a/entity_reference_revisions.services.yml b/entity_reference_revisions.services.yml
 index d72705c..899ca88 100755
 --- a/entity_reference_revisions.services.yml
@@ -23,10 +20,10 @@ index d72705c..899ca88 100755
 +    tags:
 +      - { name: entity_reference_revisions_revision_creation_policy}
 diff --git a/src/Plugin/Field/FieldType/EntityReferenceRevisionsItem.php b/src/Plugin/Field/FieldType/EntityReferenceRevisionsItem.php
-index 4a313ea..e7a2f77 100644
+index 4a313ea..b31b774 100644
 --- a/src/Plugin/Field/FieldType/EntityReferenceRevisionsItem.php
 +++ b/src/Plugin/Field/FieldType/EntityReferenceRevisionsItem.php
-@@ -270,16 +270,26 @@ class EntityReferenceRevisionsItem extends EntityReferenceItem implements Option
+@@ -270,16 +270,15 @@ class EntityReferenceRevisionsItem extends EntityReferenceItem implements Option
        // change on the unaffected translations. In turn, the host entity is not
        // marked as affected for these translations.
        $is_affected = !$this->getFieldDefinition()->isTranslatable() || ($host instanceof TranslatableRevisionableInterface && $host->hasTranslationChanges());
@@ -40,17 +37,6 @@ index 4a313ea..e7a2f77 100644
 -          $this->entity->isDefaultRevision($host->isDefaultRevision());
 -          $needs_save = TRUE;
 -        }
-+//      if ($is_affected && !$host->isNew() && $this->entity && $this->entity->getEntityType()->get('entity_revision_parent_id_field')) {
-+//        if ($host->isNewRevision()) {
-+//          $this->entity->setNewRevision();
-+//          $needs_save = TRUE;
-+//        }
-+//        // Additionally ensure that the default revision state is kept in sync.
-+//        if ($this->entity && $host->isDefaultRevision() != $this->entity->isDefaultRevision()) {
-+//          $this->entity->isDefaultRevision($host->isDefaultRevision());
-+//          $needs_save = TRUE;
-+//        }
-+//      }
 +      if (\Drupal::service('entity_reference_revisions.revision_creation_policy')->shouldCreateNewRevision($this)) {
 +        $this->entity->setNewRevision();
 +        $needs_save = TRUE;
@@ -65,10 +51,10 @@ index 4a313ea..e7a2f77 100644
  
 diff --git a/src/RevisionCreationPolicy/ChainRevisionCreationPolicy.php b/src/RevisionCreationPolicy/ChainRevisionCreationPolicy.php
 new file mode 100644
-index 0000000..b86762f
+index 0000000..bcb12f4
 --- /dev/null
 +++ b/src/RevisionCreationPolicy/ChainRevisionCreationPolicy.php
-@@ -0,0 +1,83 @@
+@@ -0,0 +1,72 @@
 +<?php
 +
 +namespace Drupal\entity_reference_revisions\RevisionCreationPolicy;
@@ -125,23 +111,12 @@ index 0000000..b86762f
 +  }
 +
 +  /**
-+   * @param \Drupal\entity_reference_revisions\RevisionCreationPolicy\RevisionCreationPolicyInterface $remove_policy
-+   * @param \Drupal\entity_reference_revisions\RevisionCreationPolicy\RevisionCreationPolicyInterface $add_policy
-+   *
-+   * @return $this
-+   */
-+  public function swapPolicies(RevisionCreationPolicyInterface $remove_policy, RevisionCreationPolicyInterface $add_policy) {
-+    $this->addPolicy($add_policy);
-+    $this->removePolicy($remove_policy);
-+    return $this;
-+  }
-+
-+  /**
 +   * @param \Drupal\entity_reference_revisions\Plugin\Field\FieldType\EntityReferenceRevisionsItem $item
 +   *
 +   * @return bool
 +   */
 +  public function shouldCreateNewRevision(EntityReferenceRevisionsItem $item) {
++
 +    foreach ($this->rules as $rule) {
 +      $result = $rule->shouldCreateNewRevision($item);
 +      if ($result === TRUE) {
@@ -154,10 +129,10 @@ index 0000000..b86762f
 +}
 diff --git a/src/RevisionCreationPolicy/ChainRevisionCreationPolicyInterface.php b/src/RevisionCreationPolicy/ChainRevisionCreationPolicyInterface.php
 new file mode 100644
-index 0000000..764d29f
+index 0000000..9175ed4
 --- /dev/null
 +++ b/src/RevisionCreationPolicy/ChainRevisionCreationPolicyInterface.php
-@@ -0,0 +1,15 @@
+@@ -0,0 +1,13 @@
 +<?php
 +
 +namespace Drupal\entity_reference_revisions\RevisionCreationPolicy;
@@ -169,8 +144,6 @@ index 0000000..764d29f
 +  public function removePolicy(RevisionCreationPolicyInterface $policy);
 +
 +  public function removeAllPolicies();
-+
-+  public function swapPolicies(RevisionCreationPolicyInterface $remove_policy, RevisionCreationPolicyInterface $add_policy);
 +
 +}
 diff --git a/src/RevisionCreationPolicy/CompositeEntityReferencedByNewHostRevisionViaUntranslatableReference.php b/src/RevisionCreationPolicy/CompositeEntityReferencedByNewHostRevisionViaUntranslatableReference.php

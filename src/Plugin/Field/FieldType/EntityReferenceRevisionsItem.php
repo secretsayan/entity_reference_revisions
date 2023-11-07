@@ -270,17 +270,6 @@ class EntityReferenceRevisionsItem extends EntityReferenceItem implements Option
       // change on the unaffected translations. In turn, the host entity is not
       // marked as affected for these translations.
       $is_affected = !$this->getFieldDefinition()->isTranslatable() || ($host instanceof TranslatableRevisionableInterface && $host->hasTranslationChanges());
-//      if ($is_affected && !$host->isNew() && $this->entity && $this->entity->getEntityType()->get('entity_revision_parent_id_field')) {
-//        if ($host->isNewRevision()) {
-//          $this->entity->setNewRevision();
-//          $needs_save = TRUE;
-//        }
-//        // Additionally ensure that the default revision state is kept in sync.
-//        if ($this->entity && $host->isDefaultRevision() != $this->entity->isDefaultRevision()) {
-//          $this->entity->isDefaultRevision($host->isDefaultRevision());
-//          $needs_save = TRUE;
-//        }
-//      }
       if (\Drupal::service('entity_reference_revisions.revision_creation_policy')->shouldCreateNewRevision($this)) {
         $this->entity->setNewRevision();
         $needs_save = TRUE;
